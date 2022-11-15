@@ -5,10 +5,12 @@ all: preclean compile link clean
 
 compile:
 	g++ $(COMPILEFLAGS) -c main.cpp 
-	g++ $(COMPILEFLAGS) -c settings.cpp 
+	g++ $(COMPILEFLAGS) -c settings.cpp
+	g++ $(COMPILEFLAGS) -c Game.cpp 
+	g++ $(COMPILEFLAGS) -c AssetManager.cpp 
 
 link:
-	g++ main.o settings.o $(LINKFLAGS)
+	g++ main.o settings.o Game.o AssetManager.o $(LINKFLAGS)
 
 clean:
 	del *.o
