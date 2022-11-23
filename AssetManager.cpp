@@ -1,25 +1,26 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <regex>
 #include <vector>
 #include <SFML\Graphics.hpp>
 #include "headers\AssetManager.h"
 
 AssetManager::AssetManager()
 {
-    std::vector<std::string> fileList{"assets/tile.png", "assets/selected_tile.png",
-                                      "assets/pause.png", "assets/cursor.png"};
+    std::vector<std::string> fileList{"tile", "tile_grass", "tile_rock", "tile_water", "selected_tile", "pause", "cursor", "mountain", "water_left", "water_right"};
 
     for (std::string i : fileList)
     {
         sf::Texture texture;
-        texture.loadFromFile(i);
-        i.erase(i.find("assets/"), 7);
-        i.erase(i.find(".png"), 4);
+        texture.loadFromFile("assets/" + i + ".png");
         this->textures.insert({i, texture});
+        sf::Sprite sprite;
+        sprite.setTexture(this->textures[i]);
+
+        this->sprites.insert({i, sprite});
     }
 
+    // Font
     this->font.loadFromFile("assets/font.ttf");
 }
 
@@ -27,9 +28,9 @@ AssetManager::~AssetManager()
 {
 }
 
-sf::Texture *AssetManager::getTexture(std::string id)
+sf::Sprite *AssetManager::getSprite(std::string id)
 {
-    return &(this->textures[id]);
+    return &(this->sprites[id]);
 }
 
 sf::Font *AssetManager::getFont()

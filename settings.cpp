@@ -16,7 +16,7 @@ void createNewSettingsFile()
 
 // TODO: Add values to settings array, add check if function fails.
 // Loads settings from game.cfg file.
-void loadSettings(int settings[4])
+void loadSettings(int settings[3])
 {
     // Variables (count - used to check if settings file contains all information).
     string text;
@@ -57,17 +57,11 @@ void loadSettings(int settings[4])
                 settings[2] = !text.rfind("true", 0);
                 count++;
             }
-            else if (!text.rfind("debugMode", 0))
-            {
-                text.replace(0, 10, "");
-                settings[3] = !text.rfind("true", 0);
-                count++;
-            }
     }
 
     file.close();
 
-    if (count != 4)
+    if (count != 3)
     {
         cout << "ERROR: game.cfg is incomplete. Creating new one...";
         remove("game.cfg");

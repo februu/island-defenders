@@ -9,6 +9,7 @@ class AssetManager
 private:
     sf::Texture txt;
     std::map<std::string, sf::Texture> textures;
+    std::map<std::string, sf::Sprite> sprites;
     sf::Font font;
 
 public:
@@ -16,6 +17,6 @@ public:
     virtual ~AssetManager();
 
     // Functions
-    sf::Texture *getTexture(std::string id);
+    sf::Sprite *getSprite(std::string id);
     sf::Font *getFont();
 };
