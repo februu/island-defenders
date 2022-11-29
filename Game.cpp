@@ -5,6 +5,7 @@
 #include "headers/Game.h"
 #include "headers/AssetManager.h"
 #include "headers/World.h"
+#include "headers/Hud.h"
 
 using std::cout;
 
@@ -26,51 +27,49 @@ Game::Game(int width, int height, int mapSize, float tileScale, bool fullScreenM
 
 Game::~Game()
 {
-    delete this->window;
-}
-
-void Game::createWindow()
-{
-    if (fullscreenMode)
-        this->window = new sf::RenderWindow(sf::VideoMode(screenWidth, screenHeight), "Island Defenders", sf::Style::Fullscreen);
-    else
-        this->window = new sf::RenderWindow(sf::VideoMode(screenWidth, screenHeight), "Island Defenders", sf::Style::Close);
-    this->window->setMouseCursorVisible(false);
+    delete window;
 }
 
 void Game::handleEvents()
 {
-    while (this->window->pollEvent(this->sfEvent))
+    while (window->pollEvent(sfEvent))
     {
-        if (this->isPaused)
+        if (isPaused)
         {
-            if (this->sfEvent.type == sf::Event::KeyPressed)
-                if (this->sfEvent.key.code == sf::Keyboard::Space)
-                    this->window->close();
-                else if (this->sfEvent.key.code == sf::Keyboard::Escape)
-                    this->isPaused = false;
+            if (sfEvent.type == sf::Event::KeyPressed)
+                if (sfEvent.key.code == sf::Keyboard::Space)
+                    window->close();
+                else if (sfEvent.key.code == sf::Keyboard::Escape)
+                    isPaused = false;
         }
         else
         {
-            if (this->sfEvent.type == sf::Event::KeyPressed)
-                if (this->sfEvent.key.code == sf::Keyboard::Escape)
-                    this->isPaused = true;
-                else if (this->sfEvent.key.code == sf::Keyboard::LShift)
-                    this->debugMode = true;
-                else if (this->sfEvent.key.code == sf::Keyboard::Space)
-                    this->world.createNewWorld();
-            if (this->sfEvent.type == sf::Event::KeyReleased)
-                if (this->sfEvent.key.code == sf::Keyboard::LShift)
-                    this->debugMode = false;
+            if (sfEvent.type == sf::Event::KeyPressed)
+                if (sfEvent.key.code == sf::Keyboard::Escape)
+                    if (gameState == 2)
+                        isPaused = true;
+            if (sfEvent.key.code == sf::Keyboard::LShift)
+                debugMode = true;
+            if (sfEvent.key.code == sf::Keyboard::Space)
+                world.createNewWorld();
+            if (sfEvent.type == sf::Event::KeyReleased)
+                if (sfEvent.key.code == sf::Keyboard::LShift)
+                    debugMode = false;
+            if (sfEvent.key.code == sf::Keyboard::RShift)
+                changeGameState(2);
         }
-        if (this->sfEvent.type == sf::Event::Closed)
-            this->window->close();
+        if (sfEvent.type == sf::Event::Closed)
+            window->close();
     }
 }
 
 void Game::update()
 {
-    if (!this->isPaused)
+    // Updates delta time.
+    deltaTime = clock.restart().asSeconds();
+
+    // TODO: Check if transition is not running - if (screenTransition[0])
+    if (!isPaused)
     {
         mouseToSelectedTile();
     }
@@ -78,121 +77,120 @@ void Game::update()
 
 void Game::draw()
 {
-    this->window->clear();
+    window->clear();
 
-    // Draws the map.
-    for (int y = 0; y < mapSize; y++)     // height
-        for (int x = 0; x < mapSize; x++) // width
-        {
-            int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
-            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
+    // Draws background.
+    drawSprite(0, 0, "bg", 3, 3);
+    drawSprite(0, 0, "overlay", screenWidth, screenHeight);
 
-            switch (this->world.tilemap[x][y])
-            {
-            case 1:
-                this->drawSprite(mapX, mapY, *this->am.getSprite("tile_grass"), this->tileScale, this->tileScale);
-                break;
-            case 2:
-                this->drawSprite(mapX, mapY, *this->am.getSprite("tile_rock"), this->tileScale, this->tileScale);
-                break;
-            case 3:
-                this->drawSprite(mapX, mapY, *this->am.getSprite("tile_water"), this->tileScale, this->tileScale);
-
-                // Draws waterfalls.
-                if (y == this->mapSize - 1) // 36 is offset of water texture!
-                {
-                    for (int i = 0; i < (this->screenHeight - (mapY + 19 * this->tileScale)) / 36; i++)
-                        this->drawSprite(mapX, mapY + 19 * this->tileScale + i * 36, *this->am.getSprite("water_left"), this->tileScale, this->tileScale);
-                }
-                if (x == this->mapSize - 1)
-                {
-                    for (int i = 0; i < (this->screenHeight - (mapY + 19 * this->tileScale)) / 36; i++)
-                        this->drawSprite(mapX + 16 * this->tileScale, mapY + 19 * this->tileScale + i * 36, *this->am.getSprite("water_right"), this->tileScale, this->tileScale);
-                }
-
-                break;
-            default:
-                this->drawSprite(mapX, mapY, *this->am.getSprite("tile"), this->tileScale, this->tileScale);
-            }
-
-            // Draws hovered tile.
-            if (x == this->selectedTileX && y == selectedTileY)
-                this->drawSprite(mapX, mapY, *this->am.getSprite("selected_tile"), this->tileScale, this->tileScale);
-        }
-
-    // Draw Entities aka Game Objects.
-    for (int y = 0; y < mapSize; y++)     // height
-        for (int x = 0; x < mapSize; x++) // width
-        {
-            int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
-            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
-            if (this->world.getEntity(y, x).getType() != "")
-            {
-                std::string spriteName = this->world.getEntity(y, x).getSpriteName();
-                int spriteOffsetX = this->world.getEntity(y, x).getXOffset();
-                int spriteOffsetY = this->world.getEntity(y, x).getYOffset();
-
-                drawSprite(mapX - spriteOffsetX * this->tileScale, mapY - spriteOffsetY * this->tileScale, *this->am.getSprite(spriteName), this->tileScale, this->tileScale);
-            }
-        }
-
-    // Debug Mode
-    if (this->debugMode)
+    switch (gameState)
     {
-        // fps count
-        float currentTime = this->clock.restart().asSeconds();
-        int fps = 1 / currentTime;
-        this->drawText(10, 10, "fps=" + std::to_string(fps), 15);
-        // mouse position
-        this->drawText(10, 25, "mousePos=" + std::to_string(sf::Mouse::getPosition(*this->window).x) + "," + std::to_string(sf::Mouse::getPosition(*this->window).y), 15);
-        // hovered tile coords
-        this->drawText(10, 40, "hoveredTile=" + std::to_string(this->selectedTileX) + "," + std::to_string(this->selectedTileY), 15);
+
+    // Main Menu
+    case 0:
+        drawMainMenu();
+        break;
+
+    // New Game Screen
+    case 1:
+        drawText(screenWidth / 2, screenHeight / 2, "New Game Creation Screen", tileSize, sf::Color::White, true);
+        break;
+
+    // Game
+    case 2:
+        drawMap();
+        drawEntities();
+        // TODO: Draw HUD
+        break;
+
+    // Game Over / Score screen
+    case 3:
+        drawText(screenWidth / 2, screenHeight / 2, "Score Screen", tileSize, sf::Color::White, true);
+        break;
+
+    // Credits screen
+    case 4:
+        drawText(screenWidth / 2, screenHeight / 2, "Credits", tileSize, sf::Color::White, true);
+        break;
+
+    default:
+        drawText(screenWidth / 2, screenHeight / 2, "GameState error has occurred.", tileSize, sf::Color::White, true);
     }
 
     // Pause Screen
-    if (this->isPaused)
-    {
-        this->drawSprite(0, 0, *this->am.getSprite("pause"), this->screenWidth, this->screenHeight);
-        this->drawText(this->mapXOffset, this->screenHeight / 2, "PAUSED", tileSize, sf::Color::White, true);
-    }
+    if (isPaused)
+        drawPauseScreen();
+
+    // Draws Screen Transition.
+    if (screenTransition[0])
+        drawScreenTransition();
+
+    // Debug Mode
+    if (debugMode)
+        drawDebugInfo();
 
     // Draws the cursor.
-    this->drawSprite(sf::Mouse::getPosition(*this->window).x, sf::Mouse::getPosition(*this->window).y, *this->am.getSprite("cursor"));
+    drawSprite(sf::Mouse::getPosition(*window).x, sf::Mouse::getPosition(*window).y, "cursor");
 
-    this->window->display();
+    window->display();
 }
 
 void Game::run()
 {
-    while (this->window->isOpen())
+    while (window->isOpen())
     {
-        this->handleEvents();
-        this->update();
-        this->draw();
+        handleEvents();
+        update();
+        draw();
     }
 }
 
+// ================= Game Functions =================
+
+void Game::createWindow()
+{
+    if (fullscreenMode)
+        window = new sf::RenderWindow(sf::VideoMode(screenWidth, screenHeight), "Island Defenders", sf::Style::Fullscreen);
+    else
+        window = new sf::RenderWindow(sf::VideoMode(screenWidth, screenHeight), "Island Defenders", sf::Style::Close);
+    window->setMouseCursorVisible(false);
+}
+
+void Game::changeGameState(int newGameState)
+{
+    screenTransition[0] = 1;
+    screenTransition[3] = newGameState;
+}
+
+// ================= Update Functions =================
+
+// Calculates hovered tile.
 void Game::mouseToSelectedTile()
 {
-    int x1 = sf::Mouse::getPosition(*this->window).x - mapXOffset;
-    int y1 = (sf::Mouse::getPosition(*this->window).y - mapYOffset) * -2;
+    int x1 = sf::Mouse::getPosition(*window).x - mapXOffset;
+    int y1 = (sf::Mouse::getPosition(*window).y - mapYOffset) * -2;
     double xr = cos(M_PI / 4) * x1 - sin(M_PI / 4) * y1;
     double yr = sin(M_PI / 4) * x1 + cos(M_PI / 4) * y1;
     double diag = tileSize * sqrt(2);
-    this->selectedTileX = floor(xr / diag);
-    this->selectedTileY = floor(yr * -1 / diag);
+    selectedTileX = floor(xr / diag);
+    selectedTileY = floor(yr * -1 / diag);
 }
 
-void Game::drawSprite(int x, int y, sf::Sprite sprite, float scaleX, float scaleY)
+// ================= Draw Functions =================
+
+// Draws sprite.
+void Game::drawSprite(int x, int y, std::string spriteName, float scaleX, float scaleY)
 {
+    sf::Sprite sprite = *am.getSprite(spriteName);
     sprite.setScale(sf::Vector2f(scaleX, scaleY));
     sprite.setPosition(sf::Vector2f(x, y));
-    this->window->draw(sprite);
+    window->draw(sprite);
 }
 
-void Game::drawText(int x, int y, std::string content, int size, sf::Color color, bool centered)
+// Draws text.
+void Game::drawText(int x, int y, std::string content, int size, sf::Color color, bool centered, std::string font)
 {
-    sf::Text text(content, *this->am.getFont());
+    sf::Text text(content, *am.getFont(font));
     text.setCharacterSize(size);
     text.setPosition(sf::Vector2f(x, y));
     text.setFillColor(color);
@@ -200,7 +198,171 @@ void Game::drawText(int x, int y, std::string content, int size, sf::Color color
     {
         sf::FloatRect textRect = text.getLocalBounds();
         text.setOrigin(textRect.left + textRect.width / 2.0f,
-                       textRect.top + textRect.height / 2.0f);
+                       textRect.top);
     }
-    this->window->draw(text);
+    window->draw(text);
 }
+
+// Draws main menu.
+void Game::drawMainMenu()
+{
+    int size = tileSize * tileScale * 2;
+    int smallSize = tileSize * tileScale / 2;
+    int offset = smallSize / 2;
+    drawSprite(0, 0, "overlay", screenWidth, screenHeight);
+    drawText(mapXOffset, screenHeight / 2 - (size / 2), "ISLAND DEFENDERS", size, sf::Color::White, true, "arcade");
+    drawText(mapXOffset, screenHeight / 2, "> Load Game", smallSize, sf::Color::White, true); // TODO: Gray out this option
+    drawText(mapXOffset, screenHeight / 2 + smallSize + offset, "> New Game", smallSize, sf::Color::White, true);
+    drawText(mapXOffset, screenHeight / 2 + 2 * (smallSize + offset), "> Options", smallSize, sf::Color::White, true);
+    drawText(mapXOffset, screenHeight / 2 + 3 * (smallSize + offset), "> Credits", smallSize, sf::Color::White, true);
+    drawText(mapXOffset, screenHeight / 2 + 4 * (smallSize + offset), "> Exit", smallSize, sf::Color::White, true);
+}
+
+// Draws the map.
+void Game::drawMap()
+{
+    for (int y = 0; y < mapSize; y++)     // height
+        for (int x = 0; x < mapSize; x++) // width
+        {
+            int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
+            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
+
+            switch (world.tilemap[x][y])
+            {
+            case 1:
+                drawSprite(mapX, mapY, "tile_grass", tileScale, tileScale);
+                break;
+            case 2:
+                drawSprite(mapX, mapY, "tile_rock", tileScale, tileScale);
+                break;
+            case 3:
+                drawSprite(mapX, mapY, "tile_water", tileScale, tileScale);
+
+                // Draws waterfalls.
+                if (y == mapSize - 1) // 36 is offset of water texture!
+                {
+                    for (int i = 0; i < (screenHeight - (mapY + 19 * tileScale)) / 36; i++)
+                        drawSprite(mapX, mapY + 19 * tileScale + i * 36, "water_left", tileScale, tileScale);
+                }
+                if (x == mapSize - 1)
+                {
+                    for (int i = 0; i < (screenHeight - (mapY + 19 * tileScale)) / 36; i++)
+                        drawSprite(mapX + 16 * tileScale, mapY + 19 * tileScale + i * 36, "water_right", tileScale, tileScale);
+                }
+
+                break;
+            default:
+                drawSprite(mapX, mapY, "tile", tileScale, tileScale);
+            }
+
+            // Draws hovered tile.
+            if (x == selectedTileX && y == selectedTileY && !isPaused && world.tilemap[x][y] != 3)
+                drawSprite(mapX, mapY, "selected_tile", tileScale, tileScale);
+        }
+}
+
+// Draws Entities aka Game Objects.
+void Game::drawEntities()
+{
+
+    for (int y = 0; y < mapSize; y++)     // height
+        for (int x = 0; x < mapSize; x++) // width
+        {
+            int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
+            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
+            if (world.getEntity(y, x).getType() != "")
+            {
+                std::string spriteName = world.getEntity(y, x).getSpriteName();
+                int spriteOffsetX = world.getEntity(y, x).getXOffset();
+                int spriteOffsetY = world.getEntity(y, x).getYOffset();
+
+                drawSprite(mapX - spriteOffsetX * tileScale, mapY - spriteOffsetY * tileScale, spriteName, tileScale, tileScale);
+            }
+        }
+}
+
+// Draws debug info in top left corner of the screen.
+void Game::drawDebugInfo()
+{
+    // fps count
+    int fps = 1 / deltaTime;
+    drawText(10, 10, "fps=" + std::to_string(fps), 15);
+    // mouse position
+    drawText(10, 25, "mousePos=" + std::to_string(sf::Mouse::getPosition(*window).x) + "," + std::to_string(sf::Mouse::getPosition(*window).y), 15);
+    // hovered tile coords
+    drawText(10, 40, "hoveredTile=" + std::to_string(selectedTileX) + "," + std::to_string(selectedTileY), 15);
+    // screen transition value
+    drawText(10, 55, "screenTransitionValue=" + std::to_string(screenTransition[1]), 15);
+    // screen transition value
+    drawText(10, 70, "deltaTime=" + std::to_string(deltaTime * 1000), 15);
+}
+
+// Draws pause screen
+void Game::drawPauseScreen()
+{
+    int size = tileSize * tileScale;
+    drawSprite(0, 0, "overlay", screenWidth, screenHeight);
+    drawText(mapXOffset, screenHeight / 2 - 48, "PAUSED", size, sf::Color::White, true, "arcade");
+    drawText(mapXOffset, screenHeight / 2, "Click ESC to return to game.", 8 * tileScale, sf::Color::White, true);
+    drawText(mapXOffset, screenHeight / 2 + 12 * tileScale, "Click Space to exit.", 8 * tileScale, sf::Color::White, true);
+}
+
+// Draws simple scene transition.
+void Game::drawScreenTransition()
+{
+    double value = screenTransition[1];
+
+    // Check Transition State
+    if (screenTransition[2] != 1) // Runs if transition is active and is not in waiting state(2).
+    {
+        sf::RectangleShape rectangle(sf::Vector2f(0, 0));
+        rectangle.setSize(sf::Vector2f(value, screenHeight));
+        rectangle.setFillColor(sf::Color::Black);
+        window->draw(rectangle);
+
+        rectangle.setPosition(sf::Vector2f(screenWidth - value, 0));
+        window->draw(rectangle);
+
+        if (screenTransition[2] != 0) // Runs if in transition in running.
+        {
+            if (value <= 0)
+            {
+                screenTransition[2] = 0;
+                screenTransition[1] = 0;
+                screenTransition[0] = 0; // Turns off transition.
+                return;
+            }
+            screenTransition[1] -= 1 * deltaTime * 1000;
+        }
+        else // Runs if out transition in running.
+        {
+            if (value >= screenWidth / 2)
+            {
+                screenTransition[2] = 1;
+                screenTransition[1] = 0;
+                return;
+            }
+
+            screenTransition[1] += 1 * deltaTime * 1000;
+        }
+    }
+    else
+    {
+        if (value >= 500)
+        {
+            gameState = screenTransition[3];
+            screenTransition[2] = 2;
+            screenTransition[1] = screenWidth / 2;
+        }
+        else
+        {
+            sf::RectangleShape rectangle(sf::Vector2f(0, 0));
+            rectangle.setSize(sf::Vector2f(screenWidth, screenHeight));
+            rectangle.setFillColor(sf::Color::Black);
+            window->draw(rectangle);
+            screenTransition[1]++;
+        }
+    }
+}
+
+//

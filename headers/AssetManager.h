@@ -10,7 +10,7 @@ private:
     sf::Texture txt;
     std::map<std::string, sf::Texture> textures;
     std::map<std::string, sf::Sprite> sprites;
-    sf::Font font;
+    std::map<std::string, sf::Font> fonts;
 
 public:
     AssetManager();
@@ -18,5 +18,5 @@ public:
 
     // Functions
     sf::Sprite *getSprite(std::string id);
-    sf::Font *getFont();
+    sf::Font *getFont(std::string fontName);
 };
