@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
-#include "headers\settings.h"
+#include "headers/settings.h"
 
 using namespace std;
 

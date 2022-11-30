@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <SFML\Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include "headers\AssetManager.h"
 
 AssetManager::AssetManager()
@@ -11,7 +11,7 @@ AssetManager::AssetManager()
     // Loads all textures and converts them into sprites.
     std::vector<std::string> fileList{"bg", "tile", "tile_grass", "tile_rock",
                                       "tile_water", "selected_tile", "overlay",
-                                      "cursor", "mountain", "water_left", "water_right"};
+                                      "cursor", "mountain", "water_left", "water_right", "main_base"};
     for (std::string i : fileList)
     {
         sf::Texture texture;

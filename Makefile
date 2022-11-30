@@ -12,7 +12,7 @@ compile:
 	g++ $(COMPILEFLAGS) -c Hud.cpp
 
 link:
-	g++ main.o settings.o Game.o AssetManager.o World.o Hud.o $(LINKFLAGS)
+	g++ main.o settings.o Game.o Hud.o AssetManager.o World.o  $(LINKFLAGS)
 
 clean:
 	del *.o

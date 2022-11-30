@@ -1,9 +1,8 @@
-#include "headers\settings.h"
-#include "headers\Game.h"
+#include "headers/settings.h"
+#include "headers/Game.h"
 
 int main()
 {
-
     int settings[3];
     loadSettings(settings);
 
