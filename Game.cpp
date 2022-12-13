@@ -1,28 +1,32 @@
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
+#include <typeinfo>
 
 #include "headers/Game.h"
 #include "headers/AssetManager.h"
 #include "headers/World.h"
 #include "headers/Hud.h"
+#include "headers/Constants.h"
+#include "headers/Entity.h"
+#include "headers/Projectile.h"
 
 using std::cout;
 
-Game::Game(int width, int height, int mapSize, float tileScale, bool fullScreenMode)
+Game::Game(int width, int height, float tileScale, bool fullScreenMode)
 {
     // Variables
     this->screenWidth = width;
     this->screenHeight = height;
-    this->mapSize = mapSize;
     this->tileScale = tileScale;
     this->fullscreenMode = fullScreenMode;
     this->debugMode = false;
     this->tileSize = 16 * tileScale;
     this->mapXOffset = width / 2;
-    this->mapYOffset = (height - this->tileSize * mapSize) / 2;
+    this->mapYOffset = (height - this->tileSize * MAPSIZE) / 2;
     this->createWindow();
-    this->world.createNewWorld();
+    this->world = new World(this);
+    this->world->createNewWorld();
     this->hud = new Hud(this);
     hud->updateHudElements(0);
 }
@@ -31,6 +35,7 @@ Game::~Game()
 {
     delete window;
     delete hud;
+    delete world;
 }
 
 void Game::handleEvents()
@@ -41,7 +46,23 @@ void Game::handleEvents()
         if (sfEvent.type == sf::Event::MouseButtonPressed)
             if (sfEvent.mouseButton.button == sf::Mouse::Left)
                 if (selectedItem != 0)
+                {
                     hud->executeMenuAction();
+                }
+                else if (gameState == GAME)
+                {
+                    selectedTileX = hoveredTileX;
+                    selectedTileY = hoveredTileY;
+                    buildMode = false;
+                }
+        if (sfEvent.mouseButton.button == sf::Mouse::Right)
+            if (gameState == GAME)
+            {
+                selectedTileX = hoveredTileX;
+                selectedTileY = hoveredTileY;
+                hud->updateHudElements(GAME);
+                buildMode = true;
+            }
 
         if (sfEvent.type == sf::Event::KeyPressed)
             if (sfEvent.key.code == sf::Keyboard::LShift)
@@ -50,8 +71,6 @@ void Game::handleEvents()
         {
             if (sfEvent.key.code == sf::Keyboard::LShift)
                 debugMode = false;
-            if (sfEvent.key.code == sf::Keyboard::Home)
-                changeGameState(MAINMENU);
             if (sfEvent.key.code == sf::Keyboard::Escape)
                 switch (gameState)
                 {
@@ -76,13 +95,31 @@ void Game::update()
 {
     // Updates delta time.
     deltaTime = clock.restart().asSeconds();
+    timePassed += deltaTime;
 
     // TODO: Check if transition is not running - if (screenTransition[0])
-    if (!isPaused)
+    if (!isPaused && gameState == GAME)
     {
-        mouseToSelectedTile();
+        // Calculates hovered tile.
+        mouseTohoveredTile();
+
+        // Performs actions of enemies and turrets.
+        for (int y = 0; y < MAPSIZE; y++)     // height
+            for (int x = 0; x < MAPSIZE; x++) // width
+            {
+                if (world->getEntity(y, x))
+                {
+                    world->getEntity(y, x)->performAction(deltaTime);
+                }
+            }
+
+        // TODO: Add the same block of code for particles.
+        for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
+            if (projectile->update(deltaTime))
+                projectiles.erase(projectile--);
     }
 
+    // Sets selected item.
     selectedItem = hud->checkMouse(sf::Vector2f(sf::Mouse::getPosition(*window)));
 }
 
@@ -111,7 +148,9 @@ void Game::draw()
     case GAME:
         drawMap();
         drawEntities();
-        hud->drawGameHud(selectedTileX);
+        drawProjectiles();
+        drawParticles();
+        hud->drawGameHud(20);
         break;
 
     // Game Over / Score screen
@@ -178,25 +217,38 @@ void Game::changeGameState(int newGameState)
 // ================= Update Functions =================
 
 // Calculates hovered tile.
-void Game::mouseToSelectedTile()
+void Game::mouseTohoveredTile()
 {
     int x1 = sf::Mouse::getPosition(*window).x - mapXOffset;
     int y1 = (sf::Mouse::getPosition(*window).y - mapYOffset) * -2;
     double xr = cos(M_PI / 4) * x1 - sin(M_PI / 4) * y1;
     double yr = sin(M_PI / 4) * x1 + cos(M_PI / 4) * y1;
     double diag = tileSize * sqrt(2);
-    selectedTileX = floor(xr / diag);
-    selectedTileY = floor(yr * -1 / diag);
+    hoveredTileX = floor(xr / diag);
+    hoveredTileY = floor(yr * -1 / diag);
+}
+
+bool Game::checkIfValidTileSelected()
+{
+    return selectedTileX >= 0 && selectedTileX < MAPSIZE && selectedTileY >= 0 && selectedTileY < MAPSIZE;
 }
 
 // ================= Draw Functions =================
 
 // Draws sprite.
-sf::Sprite Game::drawSprite(int x, int y, std::string spriteName, float scaleX, float scaleY, bool draw)
+sf::Sprite Game::drawSprite(float x, float y, std::string spriteName, float scaleX, float scaleY, bool draw, bool reversed)
 {
     sf::Sprite sprite = *am.getSprite(spriteName);
     sprite.setScale(sf::Vector2f(scaleX, scaleY));
     sprite.setPosition(sf::Vector2f(x, y));
+    if (reversed)
+    {
+        sf::IntRect bounds = sprite.getTextureRect();
+        bounds.left = bounds.width;
+        bounds.width = -bounds.width;
+        sprite.setTextureRect(bounds);
+    }
+
     if (draw)
         window->draw(sprite);
     return sprite;
@@ -220,67 +272,113 @@ sf::Text Game::drawText(int x, int y, std::string content, int size, sf::Color c
     return text;
 }
 
+// Adds particle to vector.
+void Game::addParticle(Particle particle)
+{
+    particles.push_back(particle);
+}
+
+// Adds projectile to vector.
+void Game::addProjectile(Projectile projectile)
+{
+    projectiles.push_back(projectile);
+}
+
 // Draws the map.
 void Game::drawMap()
 {
-    for (int y = 0; y < mapSize; y++)     // height
-        for (int x = 0; x < mapSize; x++) // width
+    for (int y = 0; y < MAPSIZE; y++)     // height
+        for (int x = 0; x < MAPSIZE; x++) // width
         {
             int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
             int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
 
-            switch (world.tilemap[x][y])
+            switch (world->tilemap[x][y])
             {
-            case 1:
+            case REGULARTILE:
+                drawSprite(mapX, mapY, "tile", tileScale, tileScale);
+                break;
+            case GRASSTILE:
                 drawSprite(mapX, mapY, "tile_grass", tileScale, tileScale);
                 break;
-            case 2:
-                drawSprite(mapX, mapY, "tile_rock", tileScale, tileScale);
+            case ROCKTILE:
+                drawSprite(mapX, mapY, "tile_rocks", tileScale, tileScale);
                 break;
-            case 3:
-                drawSprite(mapX, mapY, "tile_water", tileScale, tileScale);
+            case PLANTTILE:
+                drawSprite(mapX, mapY, "tile_plants", tileScale, tileScale);
+                break;
+            case MINETILE:
+                drawSprite(mapX, mapY, "tile_mine", tileScale, tileScale);
+                break;
+            case WATERTILE:
+                drawSprite(mapX, mapY, "water", tileScale, tileScale);
 
                 // Draws waterfalls.
-                if (y == mapSize - 1) // 36 is offset of water texture!
+                if (y == MAPSIZE - 1) // 36 is offset of water texture!
                 {
                     for (int i = 0; i < (screenHeight - (mapY + 19 * tileScale)) / 36; i++)
                         drawSprite(mapX, mapY + 19 * tileScale + i * 36, "water_left", tileScale, tileScale);
                 }
-                if (x == mapSize - 1)
+                if (x == MAPSIZE - 1)
                 {
                     for (int i = 0; i < (screenHeight - (mapY + 19 * tileScale)) / 36; i++)
                         drawSprite(mapX + 16 * tileScale, mapY + 19 * tileScale + i * 36, "water_right", tileScale, tileScale);
                 }
-
                 break;
-            default:
-                drawSprite(mapX, mapY, "tile", tileScale, tileScale);
             }
 
             // Draws hovered tile.
-            if (x == selectedTileX && y == selectedTileY && !isPaused && world.tilemap[x][y] != 3)
-                drawSprite(mapX, mapY, "selected_tile", tileScale, tileScale);
+            if (x == hoveredTileX && y == hoveredTileY && !isPaused && world->tilemap[x][y] != WATERTILE && selectedItem == 0)
+                drawSprite(mapX, mapY, "tile_hovered", tileScale, tileScale);
         }
+
+    int mapX = tileSize * selectedTileX - tileSize * selectedTileY - tileSize + mapXOffset;
+    int mapY = (tileSize * selectedTileY + tileSize * selectedTileX) / 2 + mapYOffset;
+
+    if (checkIfValidTileSelected() && !isPaused) // FIXME: && world->tilemap[selectedTileX][selectedTileY] != WATERTILE
+        drawSprite(mapX - tileScale, mapY - tileScale, "tile_selected", tileScale, tileScale);
 }
 
 // Draws Entities aka Game Objects.
 void Game::drawEntities()
 {
 
-    for (int y = 0; y < mapSize; y++)     // height
-        for (int x = 0; x < mapSize; x++) // width
+    for (int y = 0; y < MAPSIZE; y++)     // height
+        for (int x = 0; x < MAPSIZE; x++) // width
         {
             int mapX = tileSize * x - tileSize * y - tileSize + mapXOffset;
-            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset;
-            if (world.getEntity(y, x).getType() != "")
+            int mapY = (tileSize * y + tileSize * x) / 2 + mapYOffset; //  + sin(timePassed * 2) * tileScale;
+            if (world->getEntity(x, y))
             {
-                std::string spriteName = world.getEntity(y, x).getSpriteName();
-                int spriteOffsetX = world.getEntity(y, x).getXOffset();
-                int spriteOffsetY = world.getEntity(y, x).getYOffset();
-
-                drawSprite(mapX - spriteOffsetX * tileScale, mapY - spriteOffsetY * tileScale, spriteName, tileScale, tileScale);
+                Entity *ent = world->getEntity(x, y);
+                std::string spriteName = ent->getSpriteName();
+                int spriteOffsetX = ent->getXOffset() * tileScale;
+                int spriteOffsetY = ent->getYOffset() * tileScale;
+                float spriteMoveOffsetX = ent->getMoveX() * tileScale;
+                float spriteMoveOffsetY = ent->getMoveY() * tileScale;
+                if (ent->getDirection() > 1)
+                    drawSprite(mapX + spriteOffsetX + spriteMoveOffsetX, mapY - spriteOffsetY + spriteMoveOffsetY, spriteName, tileScale, tileScale);
+                else
+                    drawSprite(mapX + spriteOffsetX + spriteMoveOffsetX, mapY - spriteOffsetY + spriteMoveOffsetY, spriteName, tileScale, tileScale, true, true);
             }
         }
+}
+
+// Draws particles.
+void Game::drawParticles()
+{
+    // TODO: Loop though vector.
+}
+
+// Draws particles.
+void Game::drawProjectiles()
+{
+    for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
+    {
+        float x = projectile->getPosition().x - tileScale * 2;
+        float y = projectile->getPosition().y - tileScale * 2;
+        drawSprite(x, y, projectile->getSpriteName(), 2 * tileScale, 2 * tileScale);
+    }
 }
 
 // Draws debug info in top left corner of the screen.
@@ -292,7 +390,7 @@ void Game::drawDebugInfo()
     // mouse position
     drawText(10, 25, "mousePos=" + std::to_string(sf::Mouse::getPosition(*window).x) + "," + std::to_string(sf::Mouse::getPosition(*window).y), 15);
     // hovered tile coords
-    drawText(10, 40, "hoveredTile=" + std::to_string(selectedTileX) + "," + std::to_string(selectedTileY), 15);
+    drawText(10, 40, "hoveredTile=" + std::to_string(hoveredTileX) + "," + std::to_string(hoveredTileY), 15);
     // game state
     drawText(10, 55, "gameState=" + std::to_string(gameState), 15);
     // screen transition value

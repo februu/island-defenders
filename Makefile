@@ -10,9 +10,12 @@ compile:
 	g++ $(COMPILEFLAGS) -c AssetManager.cpp
 	g++ $(COMPILEFLAGS) -c World.cpp 
 	g++ $(COMPILEFLAGS) -c Hud.cpp
+	g++ $(COMPILEFLAGS) -c Entity.cpp
+	g++ $(COMPILEFLAGS) -c Particle.cpp
+	g++ $(COMPILEFLAGS) -c Projectile.cpp
 
 link:
-	g++ main.o settings.o Game.o Hud.o AssetManager.o World.o  $(LINKFLAGS)
+	g++ main.o settings.o Game.o Hud.o AssetManager.o Entity.o World.o Particle.o Projectile.o $(LINKFLAGS)
 
 clean:
 	del *.o

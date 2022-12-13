@@ -12,14 +12,6 @@ class Hud
 {
 private:
     Game *game;
-    enum gameStates
-    {
-        MAINMENU,
-        NEWGAME,
-        GAME,
-        SCORE,
-        CREDITS
-    };
     struct hudElement
     {
         sf::FloatRect bounds;

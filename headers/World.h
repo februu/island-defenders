@@ -2,38 +2,27 @@
 
 #include <vector>
 #include "SFML/Graphics.hpp"
+#include "Entity.h"
+#include "Constants.h"
+#include "Game.h"
 
-// ========================= Game Object Class =========================
+class Game;
 
-class Entity
-{
-private:
-    int x, y, xOffset, yOffset;
-    int health;
-    std::string spriteName, type;
-
-public:
-    Entity();
-    ~Entity();
-    void createEntity(std::string type, std::string spriteName, int xOffset, int yOffset, int health);
-    std::string getSpriteName();
-    std::string getType();
-    int getXOffset();
-    int getYOffset();
-};
-
-// ========================= World Class =========================
+class Entity;
 
 class World
 {
 private:
-    Entity world[20][20]; // TODO: Add enemies.
-    int income = 0;       // TODO: set starting value.
+    // TODO: Add enemies.
+    int income = 0; // TODO: set starting value.
 
 public:
-    int tilemap[20][20];
-    World();
+    Game *game;
+    Entity *entities[MAPSIZE * MAPSIZE];
+    int tilemap[MAPSIZE][MAPSIZE];
+    World(Game *game);
     ~World();
     void createNewWorld();
-    Entity getEntity(int x, int y);
+    Entity *getEntity(int x, int y);
+    void placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health);
 };

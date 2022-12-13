@@ -2,7 +2,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include "headers/Hud.h"
 #include "headers/Game.h"
-#include <iostream>
+#include "headers/Constants.h"
 
 Hud::Hud(Game *game)
 {
@@ -45,7 +45,7 @@ void Hud::executeMenuAction()
             game->changeGameState(NEWGAME);
             break;
         case 2:
-            game->changeGameState(GAME);
+            game->changeGameState(GAME); // TODO: Load existing game.
             break;
         case 3:
             system("start https://github.com/februu");
@@ -73,6 +73,7 @@ void Hud::executeMenuAction()
             break;
         case 3:
             game->changeGameState(GAME);
+            game->world->createNewWorld();
             // TODO: Pass difficulty and element choice to World.
             break;
         }
@@ -95,7 +96,37 @@ void Hud::executeMenuAction()
             game->changeGameState(MAINMENU);
             break;
         case -1:
-            game->isPaused = !game->isPaused;
+            game->isPaused = false;
+            updateHudElements(GAME);
+            break;
+        case 1:
+            game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire_left", 5, 7, 10);
+            game->selectedTileX = -1;
+            game->selectedTileY = -1;
+            updateHudElements(GAME);
+            break;
+        case 2:
+            game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire_right", 5, 7, 10);
+            game->selectedTileX = -1;
+            game->selectedTileY = -1;
+            updateHudElements(GAME);
+            break;
+        case 3:
+            game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire_up", 5, 7, 10);
+            game->selectedTileX = -1;
+            game->selectedTileY = -1;
+            updateHudElements(GAME);
+            break;
+        case 4:
+            game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire_down", 5, 7, 10);
+            game->selectedTileX = -1;
+            game->selectedTileY = -1;
+            updateHudElements(GAME);
+            break;
+        case 5:
+            game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire_right", 5, 7, 10);
+            game->selectedTileX = -1;
+            game->selectedTileY = -1;
             updateHudElements(GAME);
             break;
         }
@@ -140,7 +171,32 @@ void Hud::updateHudElements(int newGameState)
             addHudElement(game->drawText(game->mapXOffset, game->screenHeight / 2 + 1 * (smallSize + offset), "Return to game", smallSize, sf::Color::White, true, "pixelmix", false).getGlobalBounds(), -1);
             addHudElement(game->drawText(game->mapXOffset, game->screenHeight / 2 + 2 * (smallSize + offset), "Save & Exit", smallSize, sf::Color::White, true, "pixelmix", false).getGlobalBounds(), -2);
         }
-        // TODO: Add more elements
+        else
+        {
+            if (game->checkIfValidTileSelected() && game->buildMode && game->world->tilemap[game->selectedTileX][game->selectedTileY] != WATERTILE && game->world->entities[game->selectedTileX * MAPSIZE + game->selectedTileY] == nullptr)
+            {
+                int x = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset;
+                int y = (game->tileSize * game->selectedTileY + game->tileSize * game->selectedTileX) / 2 + game->mapYOffset;
+                x += 16 * game->tileScale - 184 / 2 * game->tileScale;
+                if (game->selectedTileX > MAPSIZE - 5 && game->selectedTileY > MAPSIZE - 5)
+                    y -= (40 + 2) * game->tileScale;
+                else
+                    y += (16 + 4) * game->tileScale;
+                x += 4 * game->tileScale;
+                y += 4 * game->tileScale;
+
+                // Build Hud Options
+                addHudElement(sf::FloatRect(x + (0 * 24 + 1 * 6) * game->tileScale, y, 24 * game->tileScale, 24 * game->tileScale), 1);
+                addHudElement(sf::FloatRect(x + (1 * 24 + 2 * 6) * game->tileScale, y, 24 * game->tileScale, 24 * game->tileScale), 2);
+                addHudElement(sf::FloatRect(x + (2 * 24 + 3 * 6) * game->tileScale, y, 24 * game->tileScale, 24 * game->tileScale), 3);
+                addHudElement(sf::FloatRect(x + (3 * 24 + 4 * 6) * game->tileScale, y, 24 * game->tileScale, 24 * game->tileScale), 4);
+                addHudElement(sf::FloatRect(x + (4 * 24 + 5 * 6) * game->tileScale, y, 24 * game->tileScale, 24 * game->tileScale), 5);
+
+                // Build Hud
+                addHudElement(sf::FloatRect(x, y, 152 * game->tileScale, 40 * game->tileScale), -3);
+            }
+        }
+        // TODO: Add pause button.
         break;
     }
     }
@@ -189,7 +245,30 @@ void Hud::drawNewGameScreen()
 
 void Hud::drawGameHud(int wave)
 {
-    game->drawText(game->mapXOffset, 48, "Wave " + std::to_string(wave), smallSize, sf::Color::White, true);
+    // game->drawText(game->mapXOffset, 48, "Wave " + std::to_string(wave), smallSize, sf::Color::White, true);
+    if (game->checkIfValidTileSelected() && game->buildMode && game->world->tilemap[game->selectedTileX][game->selectedTileY] != WATERTILE && game->world->entities[game->selectedTileX * MAPSIZE + game->selectedTileY] == nullptr)
+    {
+        int x = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset;
+        int y = (game->tileSize * game->selectedTileY + game->tileSize * game->selectedTileX) / 2 + game->mapYOffset;
+        x += 16 * game->tileScale - 184 / 2 * game->tileScale;
+        if (game->selectedTileX > MAPSIZE - 5 && game->selectedTileY > MAPSIZE - 5)
+            y -= (40 + 2) * game->tileScale;
+        else
+            y += (16 + 4) * game->tileScale;
+        game->drawSprite(x, y, "build_hud", game->tileScale, game->tileScale);
+
+        // Highlights hovered option.
+        if (game->selectedItem > 0 && game->selectedItem < 6)
+            game->drawSprite(x + (4 + (game->selectedItem - 1) * 24 + (game->selectedItem - 1) * 6) * game->tileScale, y + 4 * game->tileScale, "build_hud_selected", game->tileScale, game->tileScale);
+
+        // Draws buildings relatively to build hud.
+        game->drawSprite(x + (5 + 0 * 30) * game->tileScale, y + 6 * game->tileScale, "turret_fire_right", game->tileScale, game->tileScale);
+        game->drawSprite(x + (5 + 1 * 30) * game->tileScale, y + 6 * game->tileScale, "turret_ice_right", game->tileScale, game->tileScale);
+        game->drawSprite(x + (5 + 2 * 30) * game->tileScale, y + 6 * game->tileScale, "turret_poison_right", game->tileScale, game->tileScale);
+        game->drawSprite(x + (5 + 3 * 30) * game->tileScale, y + 6 * game->tileScale, "turret_poison_right", game->tileScale, game->tileScale);
+        game->drawSprite(x + (5 + 4 * 30) * game->tileScale, y + 6 * game->tileScale, "turret_poison_right", game->tileScale, game->tileScale);
+        // TODO: Add turets and mines.
+    }
 }
 
 void Hud::drawScore()

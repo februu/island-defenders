@@ -1,89 +1,56 @@
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 #include "headers/World.h"
 #include "headers/AssetManager.h"
-
-// ========================= Game Object Class =========================
-
-Entity::Entity()
-{
-}
-
-Entity::~Entity()
-{
-}
-
-void Entity::createEntity(std::string type, std::string spriteName, int xOffset, int yOffset, int health)
-{
-
-    this->spriteName = spriteName;
-    this->xOffset = xOffset;
-    this->yOffset = yOffset;
-    this->health = health;
-    this->type = type;
-}
-
-std::string Entity::getSpriteName()
-{
-    return this->spriteName;
-}
-
-std::string Entity::getType()
-{
-    return this->type;
-}
-
-int Entity::getXOffset()
-{
-    return this->xOffset;
-}
-
-int Entity::getYOffset()
-{
-    return this->yOffset;
-}
+#include "headers/Entity.h"
+#include "headers/Constants.h"
+#include "headers/Projectile.h"
 
 // ========================= World Class =========================
 
-World::World()
+World::World(Game *game)
 {
+    this->game = game;
 }
 
 World::~World()
 {
+    for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
+        delete entities[i];
 }
 
-// TODO: World generation.
+// TODO: World generation. Add conditions for tiles, mines, water etc.
 void World::createNewWorld()
 {
-    // Clears entities.
-    Entity ent;
-    for (int i = 0; i < 20; i++)
-        for (int j = 0; j < 20; j++)
-            this->world[i][j] = ent;
+    srand((unsigned)time(NULL));
+
+    for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
+        entities[i] = nullptr;
 
     // Generates tilemap.
-    for (int i = 0; i < 20; i++)
-        for (int j = 0; j < 20; j++)
+    for (int i = 0; i < MAPSIZE; i++)
+        for (int j = 0; j < MAPSIZE; j++)
             this->tilemap[i][j] = 0;
 
     // Adds tiles with grass and rocks.
     for (int i = 40 + rand() % 80; i > 0; i--)
     {
-        int x = rand() % 20;
-        int y = rand() % 20;
-        this->tilemap[rand() % 20][rand() % 20] = rand() % 2 + 1;
+        this->tilemap[rand() % MAPSIZE][rand() % MAPSIZE] = rand() % 3 + 1; // Sets array to REGULARTILE, GRASSTILE, ROCKTILE or PLANTTILE
     }
 
-    srand((unsigned)time(NULL));
+    for (int i = 0; i < 4; i++)
+    {
+        this->tilemap[rand() % MAPSIZE][rand() % MAPSIZE] = MINETILE; // Sets array to REGULARTILE, GRASSTILE, ROCKTILE, PLANTTILE or MINETILE.
+    }
 
     // Adds water pools in available spaces.
     for (int i = 2 + rand() % 4; i > 0; i--) // Amount of pools
     {
-        int x = rand() % 20;
-        int y = rand() % 20;
+        int x = rand() % MAPSIZE;
+        int y = rand() % MAPSIZE;
         int direction = rand() % 4; // top, right, bottom, left
         std::string waterSchematics[8] = {
             "1100011011111100",
@@ -99,25 +66,49 @@ void World::createNewWorld()
             for (int j = 0; j < 4; j++)
             {
                 if (waterSchematics[schematic][i * 4 + j] == '1')
-                    this->tilemap[std::max(std::min(x - 1 + i, 19), 0)][std::max(std::min(y - 1 + j, 19), 0)] = 3;
+                    this->tilemap[std::max(std::min(x - 1 + i, MAPSIZE - 1), 0)][std::max(std::min(y - 1 + j, MAPSIZE - 1), 0)] = WATERTILE;
             }
     }
 
-    // // Places Mountains.
-    // for (int i = 3 + rand() % 4; i > 0; i--)
-    // {
-    //     while (true)
-    //     {
-    //         int x = rand() % 20;
-    //         int y = rand() % 20;
-    //         if (this->tilemap[x][y] != 3)
-    //             this->world[x][y].createEntity("mountain", "mountain", 0, 16, 10);
-    //         break;
-    //     };
-    // }
+    // Creates entities.
+    // TODO: Make map of tuples for offsets in enums.h.
+    int x, y;
+
+    for (int i = 0; i < 5; i++)
+    {
+        x = rand() % MAPSIZE;
+        y = rand() % MAPSIZE;
+        Enemy *r_wasp = new Enemy();
+        r_wasp->createEntity(x, y, "wasp", "wasp_red", 5, 7, 3, this);
+        entities[x * MAPSIZE + y] = r_wasp;
+    }
+
+    for (int i = 0; i < 5; i++)
+    {
+        x = rand() % MAPSIZE;
+        y = rand() % MAPSIZE;
+        Enemy *b_slime = new Enemy();
+        b_slime->createEntity(x, y, "slime", "slime_blue", 8, 4, 3, this);
+        entities[x * MAPSIZE + y] = b_slime;
+    }
+
+    Building *main_base = new Building();
+    main_base->createEntity(10, 10, "base", "main_base", -11, 25, 20, this);
+    entities[10 * MAPSIZE + 10] = main_base;
 }
 
-Entity World::getEntity(int x, int y)
+Entity *World::getEntity(int x, int y)
 {
-    return this->world[x][y];
+    return entities[x * MAPSIZE + y];
+}
+
+void World::placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health)
+{
+    if (entities[x * MAPSIZE + y] == nullptr)
+    {
+        Building *building = new Building();
+        building->createEntity(x, y, type, spriteName, xOffset, yOffset, health, this);
+        entities[x * MAPSIZE + y] = building;
+    }
+    return;
 }

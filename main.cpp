@@ -7,7 +7,7 @@ int main()
     loadSettings(settings);
 
     // width, height, mapSize, tileScale, fullScreenMode
-    Game game(settings[0], settings[1], 20, 2.f, settings[2]);
+    Game game(settings[0], settings[1], 2.f, settings[2]);
     game.run();
 
     return 0;
