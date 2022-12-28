@@ -10,6 +10,7 @@ AssetManager::AssetManager()
     // Loads hud sprites.
     addSprite("bg", true);
     addSprite("cursor", true);
+    addSprite("info_hud", true);
     addSprite("build_hud", true);
     addSprite("build_hud_selected", true);
     addSprite("overlay", true);

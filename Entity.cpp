@@ -53,6 +53,16 @@ void Entity::performAction(double time)
 {
 }
 
+int Entity::getX()
+{
+    return x;
+}
+
+int Entity::getY()
+{
+    return y;
+}
+
 float Entity::getMoveX()
 {
     return 0;
@@ -63,11 +73,44 @@ float Entity::getMoveY()
     return 0;
 }
 
+World *Entity::getWorld()
+{
+    return world;
+}
+
+double Entity::getTimeToNextMove()
+{
+    return timeToNextMove;
+}
+
 int Entity::getDirection()
 {
     return 2;
 }
 
+int Entity::getIsMoving()
+{
+    return 0;
+}
+
+int Entity::getHealth()
+{
+    return health;
+}
+
+void Entity::decreaseHealth(int damage)
+{
+    health -= damage;
+    if (health <= 0)
+    {
+        world->destroyEntity(x, y);
+    }
+}
+
+void Entity::setTimeToNextMove(double time)
+{
+    this->timeToNextMove = time;
+}
 // ============================= Enemy Class =============================
 
 Enemy::Enemy()
@@ -78,107 +121,172 @@ Enemy::~Enemy()
 {
 }
 
-void Enemy::chooseNewTile(int *new_x, int *new_y)
+sf::Vector2i getFromVector(std::vector<visitedTile> visited, sf::Vector2i vertex)
 {
-    double distance[4];
-    distance[0] = sqrt(((10.5 - std::max(0, y - 1)) * (10.5 - std::max(0, y - 1))) + ((10.5 - x) * (10.5 - x)));
-    distance[1] = sqrt(((10.5 - y) * (10.5 - y)) + ((10.5 - std::min(MAPSIZE - 1, x + 1)) * (10.5 - std::min(MAPSIZE - 1, x + 1))));
-    distance[2] = sqrt(((10.5 - std::min(MAPSIZE - 1, y + 1)) * (10.5 - std::min(MAPSIZE - 1, y + 1))) + ((10.5 - x) * (10.5 - x)));
-    distance[3] = sqrt(((10.5 - y) * (10.5 - y)) + ((10.5 - std::max(0, x - 1)) * (10.5 - std::max(0, x - 1))));
-    for (;;)
+    for (auto i = visited.begin(); i != visited.end(); ++i)
     {
-        int shortest_distance = 10000;
-        int optimal_direction;
-        for (int i = 0; i < 4; i++)
-        {
-            if (distance[i] < shortest_distance)
-            {
-                shortest_distance = distance[i];
-                optimal_direction = i;
-            }
-        }
-        direction = optimal_direction;
-
-        switch (direction)
-        {
-        case 0:
-            *new_x = x;
-            *new_y = std::min(std::max(0, y - 1), MAPSIZE - 1);
-            break;
-        case 1:
-            *new_x = std::min(std::max(0, x + 1), MAPSIZE - 1);
-            *new_y = y;
-            break;
-        case 2:
-            *new_x = x;
-            *new_y = std::min(std::max(0, y + 1), MAPSIZE - 1);
-            break;
-        case 3:
-            *new_x = std::min(std::max(0, x - 1), MAPSIZE - 1);
-            *new_y = y;
-            break;
-        }
-
-        if (world->tilemap[*new_x][*new_y] != WATERTILE)
-            return;
-
-        distance[direction] = 20000;
+        if ((*i).vertex == vertex)
+            return (*i).origin;
     }
+}
+
+bool checkIfNotInVector(std::vector<visitedTile> queue, sf::Vector2i newVertex)
+{
+    for (auto tile = begin(queue); tile != end(queue); ++tile)
+        if (tile->vertex == newVertex)
+            return false;
+    return true;
+}
+
+void Enemy::findPath()
+{
+    dest_x = 11;
+    dest_y = 11;
+    std::vector<visitedTile> queue;
+    std::vector<visitedTile> visited;
+    int maxsteps = 5000;
+    int currentX = x, currentY = y;
+    visited.push_back({sf::Vector2i(currentX, currentY), sf::Vector2i(-1, -1)});
+    while (maxsteps > 0)
+    {
+        if (checkIfNotInVector(queue, sf::Vector2i(currentX + 1, currentY)) && currentX + 1 < MAPSIZE)
+        {
+            if (world->tilemap[currentX + 1][currentY] != WATERTILE)
+                queue.push_back({sf::Vector2i(currentX + 1, currentY), sf::Vector2i(currentX, currentY)});
+        }
+        if (checkIfNotInVector(queue, sf::Vector2i(currentX - 1, currentY)) && currentX - 1 >= 0)
+        {
+            if (world->tilemap[currentX - 1][currentY] != WATERTILE)
+                queue.push_back({sf::Vector2i(currentX - 1, currentY), sf::Vector2i(currentX, currentY)});
+        }
+        if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY + 1)) && currentY + 1 < MAPSIZE)
+        {
+            if (world->tilemap[currentX][currentY + 1] != WATERTILE)
+                queue.push_back({sf::Vector2i(currentX, currentY + 1), sf::Vector2i(currentX, currentY)});
+        }
+        if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY - 1)) && currentY - 1 >= 0)
+        {
+            if (world->tilemap[currentX][currentY - 1] != WATERTILE)
+                queue.push_back({sf::Vector2i(currentX, currentY - 1), sf::Vector2i(currentX, currentY)});
+        }
+
+        currentX = queue.front().vertex.x;
+        currentY = queue.front().vertex.y;
+        visited.push_back(queue.front());
+
+        queue.erase(queue.begin());
+        if (currentX == dest_x && currentY == dest_y)
+            break;
+
+        maxsteps--;
+    }
+
+    while (getFromVector(visited, sf::Vector2i(currentX, currentY)).x != -1)
+    {
+        pathBFS.push_back(sf::Vector2i(currentX, currentY));
+        sf::Vector2i currentVector = getFromVector(visited, sf::Vector2i(currentX, currentY));
+        currentX = currentVector.x;
+        currentY = currentVector.y;
+    }
+}
+
+bool Enemy::checkForNearBuildings()
+{
+    for (int target_y = std::max(y - 1, 0); target_y <= std::min(y + 1, MAPSIZE - 1); target_y++)     // height
+        for (int target_x = std::max(x - 1, 0); target_x <= std::min(x + 1, MAPSIZE - 1); target_x++) // width
+        {
+            if (target_x == x && target_y == y)
+                continue;
+            if (world->getEntity(target_x, target_y))
+                if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base")
+                {
+                    return true;
+                }
+        }
+    return false;
 }
 
 void Enemy::performAction(double deltaTime)
 {
     timeToNextMove += deltaTime;
-    // std::cout << "deltaTime=" << deltaTime << " moveX=" << moveX << " moveY=" << moveY << " timeToNextMove=" << timeToNextMove << " isMoving=" << isMoving << "\n";
 
-    // FIXME: Add moveSpeed variable to .createEntity() function.
     double moveSpeed = 0;
     if (type == "wasp")
-        moveSpeed = 0.2;
+        moveSpeed = 0.5;
     else if (type == "slime")
-        moveSpeed = 0.2;
+        moveSpeed = 0.8;
 
     if (!isMoving)
     {
         if (timeToNextMove > moveSpeed)
-        {
-            // Chooses most optimal direction.
-            int new_x, new_y;
-
-            chooseNewTile(&new_x, &new_y);
-
-            // ==============================
-
-            if (world->entities[new_x * MAPSIZE + new_y] == nullptr)
+            if (checkForNearBuildings())
             {
-                world->entities[new_x * MAPSIZE + new_y] = world->entities[x * MAPSIZE + y];
-                world->entities[x * MAPSIZE + y] = nullptr;
-                x = new_x;
-                y = new_y;
-                timeToNextMove = 0;
-                isMoving = true;
+                for (int target_y = std::max(y - 1, 0); target_y <= std::min(y + 1, MAPSIZE - 1); target_y++)     // height
+                    for (int target_x = std::max(x - 1, 0); target_x <= std::min(x + 1, MAPSIZE - 1); target_x++) // width
+                    {
+                        if (target_x == x && target_y == y)
+                            continue;
+                        if (world->getEntity(target_x, target_y))
+                            if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base")
+                            {
+                                world->getEntity(target_x, target_y)->decreaseHealth(1);
+                                timeToNextMove = 0;
+                                return;
+                            }
+                            else
+                                continue;
+                    }
+            }
+            else
+            {
+                // Chooses most optimal direction.
+                if (pathBFS.empty())
+                    return;
 
-                switch (direction)
+                int new_x = pathBFS.back().x, new_y = pathBFS.back().y;
+
+                if (new_x > x)
+                    direction = 1;
+                else if (new_x < x)
+                    direction = 3;
+                else if (new_y > y)
+                    direction = 2;
+                else if (new_y < y)
+                    direction = 0;
+
+                // ==============================
+
+                if (!world->entities[new_x * MAPSIZE + new_y])
                 {
-                case 0:
-                    moveX = -16.f;
-                    moveY = 8.f;
-                    break;
-                case 1:
-                    moveX = -15.f;
-                    moveY = -8.f;
-                    break;
-                case 2:
-                    moveX = 16.f;
-                    moveY = -8.f;
-                    break;
-                case 3:
-                    moveX = 15.f;
-                    moveY = 8.f;
-                    break;
+                    pathBFS.pop_back();
+                    world->entities[new_x * MAPSIZE + new_y] = world->entities[x * MAPSIZE + y];
+                    world->entities[x * MAPSIZE + y] = nullptr;
+                    x = new_x;
+                    y = new_y;
+                    timeToNextMove = 0;
+                    isMoving = true;
+
+                    switch (direction)
+                    {
+                    case 0:
+                        moveX = -16.f;
+                        moveY = 8.f;
+                        break;
+                    case 1:
+                        moveX = -15.f;
+                        moveY = -8.f;
+                        break;
+                    case 2:
+                        moveX = 16.f;
+                        moveY = -8.f;
+                        break;
+                    case 3:
+                        moveX = 15.f;
+                        moveY = 8.f;
+                        break;
+                    }
                 }
             }
-        }
     }
     else
     {
@@ -216,6 +324,7 @@ float Enemy::getMoveX()
 {
     return moveX;
 }
+
 float Enemy::getMoveY()
 {
     return moveY;
@@ -226,6 +335,10 @@ int Enemy::getDirection()
     return direction;
 }
 
+int Enemy::getIsMoving()
+{
+    return isMoving;
+}
 // ============================= Building Class =============================
 
 Building::Building()
@@ -236,25 +349,61 @@ Building::~Building()
 {
 }
 
+void Building::createProjectile(int target_x, int target_y, Entity *enemy)
+{
+    int start_x = world->game->tileSize * x - world->game->tileSize * y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
+    int start_y = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset;
+    int dest_x = world->game->tileSize * target_x - world->game->tileSize * target_y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
+    int dest_y = (world->game->tileSize * target_y + world->game->tileSize * target_x) / 2 + world->game->mapYOffset;
+    Projectile projectile(start_x, start_y, dest_x, dest_y, "projectile", enemy);
+    world->game->addProjectile(projectile);
+    timeToNextMove = 0;
+    return;
+}
+
 void Building::performAction(double deltaTime)
 {
-    if (type == "base")
+    if (type == "base" || type == "mine")
         return;
 
     timeToNextMove += deltaTime;
-    if (timeToNextMove > 1)
-        for (int target_y = 0; target_y < MAPSIZE; target_y++)     // height
-            for (int target_x = 0; target_x < MAPSIZE; target_x++) // width
-                if (world->getEntity(target_y, target_x))
-                    if (world->getEntity(target_y, target_x)->getType() == "wasp" || world->getEntity(target_y, target_x)->getType() == "slime")
-                    {
-                        int start_x = world->game->tileSize * x - world->game->tileSize * y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
-                        int start_y = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset;
-                        int dest_x = world->game->tileSize * target_x - world->game->tileSize * target_y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
-                        int dest_y = (world->game->tileSize * target_y + world->game->tileSize * target_x) / 2 + world->game->mapYOffset;
-                        Projectile projectile(start_x, start_y, dest_x, dest_y, "projectile");
-                        world->game->addProjectile(projectile);
-                        timeToNextMove = 0;
-                        return;
-                    }
+    if (timeToNextMove > 0.3)
+    {
+
+        std::vector<Entity *> enemies;
+
+        // Puts nearest enemies into a vector.
+        for (int i = 0; i < 3; i++)
+        {
+            for (int target_y = std::max(y - 1 - i, 0); target_y <= std::min(y + 1 + i, MAPSIZE - 1); target_y++)     // height
+                for (int target_x = std::max(x - 1 - i, 0); target_x <= std::min(x + 1 + i, MAPSIZE - 1); target_x++) // width
+                {
+                    if (target_x == x && target_y == y)
+                        continue;
+                    if (world->getEntity(target_x, target_y))
+                        if (world->getEntity(target_x, target_y)->getType() == "wasp" || world->getEntity(target_x, target_y)->getType() == "slime")
+                        {
+                            enemies.push_back(world->getEntity(target_x, target_y));
+                        }
+                }
+        }
+
+        // Searches for an enemy with the shortest distance.
+        int shortestDistance = 10000000;
+        Entity *closestEnemy = nullptr;
+        for (auto enemy = begin(enemies); enemy != end(enemies); ++enemy)
+        {
+            double distance = (x - (*enemy)->getX()) * (x - (*enemy)->getX()) + (y - (*enemy)->getY()) * (y - (*enemy)->getY());
+            if (distance < shortestDistance)
+            {
+                shortestDistance = distance;
+                closestEnemy = *enemy;
+            }
+        }
+
+        if (closestEnemy)
+            createProjectile(closestEnemy->getX(), closestEnemy->getY(), closestEnemy);
+
+        return;
+    }
 }

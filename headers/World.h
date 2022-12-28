@@ -25,4 +25,5 @@ public:
     void createNewWorld();
     Entity *getEntity(int x, int y);
     void placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health);
+    void destroyEntity(int x, int y);
 };

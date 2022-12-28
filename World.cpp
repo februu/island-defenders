@@ -28,7 +28,7 @@ void World::createNewWorld()
     srand((unsigned)time(NULL));
 
     for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
-        entities[i] = nullptr;
+        entities[i] = nullptr; // NULLPTR
 
     // Generates tilemap.
     for (int i = 0; i < MAPSIZE; i++)
@@ -47,7 +47,7 @@ void World::createNewWorld()
     }
 
     // Adds water pools in available spaces.
-    for (int i = 2 + rand() % 4; i > 0; i--) // Amount of pools
+    for (int i = 8 + rand() % 5; i > 0; i--) // Amount of pools
     {
         int x = rand() % MAPSIZE;
         int y = rand() % MAPSIZE;
@@ -71,30 +71,21 @@ void World::createNewWorld()
     }
 
     // Creates entities.
-    // TODO: Make map of tuples for offsets in enums.h.
-    int x, y;
-
-    for (int i = 0; i < 5; i++)
-    {
-        x = rand() % MAPSIZE;
-        y = rand() % MAPSIZE;
-        Enemy *r_wasp = new Enemy();
-        r_wasp->createEntity(x, y, "wasp", "wasp_red", 5, 7, 3, this);
-        entities[x * MAPSIZE + y] = r_wasp;
-    }
-
-    for (int i = 0; i < 5; i++)
-    {
-        x = rand() % MAPSIZE;
-        y = rand() % MAPSIZE;
-        Enemy *b_slime = new Enemy();
-        b_slime->createEntity(x, y, "slime", "slime_blue", 8, 4, 3, this);
-        entities[x * MAPSIZE + y] = b_slime;
-    }
-
     Building *main_base = new Building();
-    main_base->createEntity(10, 10, "base", "main_base", -11, 25, 20, this);
+    main_base->createEntity(10, 10, "base", "main_base", -11, 25, 9999, this);
     entities[10 * MAPSIZE + 10] = main_base;
+
+    Building *base_fragments1 = new Building();
+    base_fragments1->createEntity(10, 11, "base", "", 0, 0, 9999, this);
+    entities[10 * MAPSIZE + 11] = base_fragments1;
+
+    Building *base_fragments2 = new Building();
+    base_fragments2->createEntity(10, 11, "base", "", 0, 0, 9999, this);
+    entities[11 * MAPSIZE + 10] = base_fragments2;
+
+    Building *base_fragments3 = new Building();
+    base_fragments3->createEntity(10, 11, "base", "", 0, 0, 9999, this);
+    entities[11 * MAPSIZE + 11] = base_fragments3;
 }
 
 Entity *World::getEntity(int x, int y)
@@ -104,11 +95,20 @@ Entity *World::getEntity(int x, int y)
 
 void World::placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health)
 {
-    if (entities[x * MAPSIZE + y] == nullptr)
+    if (!entities[x * MAPSIZE + y])
     {
         Building *building = new Building();
         building->createEntity(x, y, type, spriteName, xOffset, yOffset, health, this);
         entities[x * MAPSIZE + y] = building;
     }
     return;
+}
+
+void World::destroyEntity(int x, int y)
+{
+    if (getEntity(x, y))
+    {
+        delete getEntity(x, y);
+        entities[x * MAPSIZE + y] = nullptr;
+    }
 }

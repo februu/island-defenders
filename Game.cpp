@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
-#include <typeinfo>
 
 #include "headers/Game.h"
 #include "headers/AssetManager.h"
@@ -10,8 +9,6 @@
 #include "headers/Constants.h"
 #include "headers/Entity.h"
 #include "headers/Projectile.h"
-
-using std::cout;
 
 Game::Game(int width, int height, float tileScale, bool fullScreenMode)
 {
@@ -53,6 +50,7 @@ void Game::handleEvents()
                 {
                     selectedTileX = hoveredTileX;
                     selectedTileY = hoveredTileY;
+                    hud->updateHudElements(GAME);
                     buildMode = false;
                 }
         if (sfEvent.mouseButton.button == sf::Mouse::Right)
@@ -96,8 +94,9 @@ void Game::update()
     // Updates delta time.
     deltaTime = clock.restart().asSeconds();
     timePassed += deltaTime;
+    spawnTimer += deltaTime;
 
-    // TODO: Check if transition is not running - if (screenTransition[0])
+    // Updates the game.
     if (!isPaused && gameState == GAME)
     {
         // Calculates hovered tile.
@@ -114,9 +113,13 @@ void Game::update()
             }
 
         // TODO: Add the same block of code for particles.
+        // Calculates positions of projectiles.
         for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
             if (projectile->update(deltaTime))
                 projectiles.erase(projectile--);
+
+        // Spawns new wave of enemies if current one is over.
+        callNewWave();
     }
 
     // Sets selected item.
@@ -187,6 +190,7 @@ void Game::draw()
 
 void Game::run()
 {
+
     while (window->isOpen())
     {
         handleEvents();
@@ -231,6 +235,47 @@ void Game::mouseTohoveredTile()
 bool Game::checkIfValidTileSelected()
 {
     return selectedTileX >= 0 && selectedTileX < MAPSIZE && selectedTileY >= 0 && selectedTileY < MAPSIZE;
+}
+
+bool Game::checkIfValidTileHovered()
+{
+    return hoveredTileX >= 0 && hoveredTileX < MAPSIZE && hoveredTileY >= 0 && hoveredTileY < MAPSIZE;
+}
+
+void Game::callNewWave()
+{
+    // Runs every 3 seconds.
+    if (spawnTimer > 3)
+    {
+        spawnTimer = 0;
+
+        // Spawns new wave of enemies.
+        for (int i = 0; i < rand() % 20 + 1; i++)
+        {
+            sf::Vector2i coords = randomizeSpawnTile();
+            Enemy *r_wasp = new Enemy(); // NEWUSE
+            r_wasp->createEntity(coords.x, coords.y, "wasp", "wasp_red", 5, 7, 3, world);
+            world->entities[coords.x * MAPSIZE + coords.y] = r_wasp;
+            r_wasp->findPath();
+            r_wasp->setTimeToNextMove(double(rand() % 50 / 100));
+        }
+    }
+}
+
+sf::Vector2i Game::randomizeSpawnTile()
+{
+    sf::Vector2i coords;
+    int side, tile;
+    do
+    {
+        side = (rand() % 2) * (MAPSIZE - 1);
+        tile = rand() % MAPSIZE;
+        if (rand() % 2)
+            coords = sf::Vector2i(side, tile);
+        else
+            coords = sf::Vector2i(tile, side);
+    } while (world->getEntity(coords.x, coords.y) || world->tilemap[coords.x][coords.y] == WATERTILE);
+    return coords;
 }
 
 // ================= Draw Functions =================
@@ -375,9 +420,9 @@ void Game::drawProjectiles()
 {
     for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
     {
-        float x = projectile->getPosition().x - tileScale * 2;
-        float y = projectile->getPosition().y - tileScale * 2;
-        drawSprite(x, y, projectile->getSpriteName(), 2 * tileScale, 2 * tileScale);
+        float x = projectile->getPosition().x - 2.5 * tileScale;
+        float y = projectile->getPosition().y - 2.5 * tileScale;
+        drawSprite(x, y, projectile->getSpriteName(), tileScale, tileScale);
     }
 }
 
@@ -397,8 +442,20 @@ void Game::drawDebugInfo()
     drawText(10, 70, "selectedItem=" + std::to_string(selectedItem), 15);
     // screen transition value
     drawText(10, 85, "screenTransitionValue=" + std::to_string(screenTransition[1]), 15);
-    // screen transition value
+    // delta time
     drawText(10, 100, "deltaTime=" + std::to_string(deltaTime * 1000), 15);
+
+    // === Entity Info ===
+
+    if (world->getEntity(selectedTileX, selectedTileY))
+    {
+        Entity *ent = world->getEntity(selectedTileX, selectedTileY);
+        drawText(10, 115, "entX=" + std::to_string(ent->getX()), 15);
+        drawText(10, 130, "entY=" + std::to_string(ent->getY()), 15);
+        drawText(10, 145, "isMoving=" + std::to_string(ent->getIsMoving()), 15);
+        drawText(10, 160, "timeToNextAction=" + std::to_string(ent->getTimeToNextMove()), 15);
+        drawText(10, 175, "ealth=" + std::to_string(ent->getHealth()), 15);
+    }
 }
 
 // Draws simple scene transition.

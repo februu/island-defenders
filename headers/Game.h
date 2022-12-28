@@ -24,7 +24,6 @@ private:
 
     // Gameplay Variables
     double deltaTime;
-    int hoveredTileX = -1, hoveredTileY = -1;
 
     bool debugMode;
     double screenTransition[4] = {0}; // {isActive [bool], value - coordinate [int], transition state (1-out, 2-waiting, 3-in) [in], end GameState [int]}
@@ -34,6 +33,8 @@ private:
 
     // Update Functions
     void mouseTohoveredTile();
+    void callNewWave();
+    sf::Vector2i randomizeSpawnTile();
 
     // Draw Functions
     void drawMap();
@@ -51,13 +52,17 @@ public:
     sf::RenderWindow *window;
     float tileSize, tileScale = 3.f;
     long double timePassed = 0;
+    double spawnTimer = 0;
     int screenWidth, screenHeight;
     int mapXOffset, mapYOffset;
     int gameState = MAINMENU;
     int selectedItem = 0;
     bool isPaused = false;
+    int hoveredTileX = -1, hoveredTileY = -1;
     int selectedTileX = -1, selectedTileY = -1;
     bool buildMode = false;
+
+    int wave = 0;
 
     World *world;
 
@@ -77,4 +82,5 @@ public:
     void changeGameState(int newGameState);
 
     bool checkIfValidTileSelected();
+    bool checkIfValidTileHovered();
 };

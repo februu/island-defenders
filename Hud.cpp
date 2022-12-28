@@ -3,6 +3,7 @@
 #include "headers/Hud.h"
 #include "headers/Game.h"
 #include "headers/Constants.h"
+#include <iostream>
 
 Hud::Hud(Game *game)
 {
@@ -246,6 +247,48 @@ void Hud::drawNewGameScreen()
 void Hud::drawGameHud(int wave)
 {
     // game->drawText(game->mapXOffset, 48, "Wave " + std::to_string(wave), smallSize, sf::Color::White, true);
+
+    // Draws Info Panel
+    if (game->checkIfValidTileHovered())
+    {
+        // Selects Item to display.
+        if (game->world->entities[game->hoveredTileX * MAPSIZE + game->hoveredTileY])
+        {
+            std::string type = game->world->entities[game->hoveredTileX * MAPSIZE + game->hoveredTileY]->getType();
+            if (type == "base" || type == "turret" || type == "mine")
+            {
+                // Draws Back Panel.
+                int ix = game->tileScale * 8;
+                int iy = game->screenHeight - (game->tileScale * (8 + 1.5 * 32));
+                game->drawSprite(ix, iy, "info_hud", 1.5 * game->tileScale, 1.5 * game->tileScale);
+
+                // Draws Entity Info.
+                Entity *ent = game->world->getEntity(game->hoveredTileX, game->hoveredTileY);
+                if (type == "base")
+                {
+                    game->drawSprite(ix + 4 * game->tileScale, iy + 6 * game->tileScale, "main_base", 0.75 * game->tileScale, 0.75 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 0.75, "DARK ALTAR", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 1.75, "Filled with unharnessed dark", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 2.75, "power coming from creatures", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "out of this world.", 6 * game->tileScale);
+                }
+                else if (type == "turret")
+                {
+                    game->drawSprite(ix + 8 * game->tileScale, iy + 8 * game->tileScale, ent->getSpriteName(), 1.5 * game->tileScale, 1.5 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 0.75, "TURRET", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 1.75, "Quick and reliable way", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 2.75, "deal with monsters.", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "Health: " + std::to_string(ent->getHealth()), 6 * game->tileScale);
+                }
+                else
+                {
+                    // TODO: Add Mines.
+                }
+            }
+        }
+    }
+
+    // Draws Build Menu.
     if (game->checkIfValidTileSelected() && game->buildMode && game->world->tilemap[game->selectedTileX][game->selectedTileY] != WATERTILE && game->world->entities[game->selectedTileX * MAPSIZE + game->selectedTileY] == nullptr)
     {
         int x = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset;
