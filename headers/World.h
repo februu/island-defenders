@@ -13,9 +13,6 @@ class Entity;
 class World
 {
 private:
-    // TODO: Add enemies.
-    int income = 0; // TODO: set starting value.
-
 public:
     Game *game;
     Entity *entities[MAPSIZE * MAPSIZE];
@@ -24,6 +21,8 @@ public:
     ~World();
     void createNewWorld();
     Entity *getEntity(int x, int y);
-    void placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health);
+    bool placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health);
     void destroyEntity(int x, int y);
+
+    int difficulty = 0;
 };

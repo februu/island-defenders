@@ -10,6 +10,12 @@
 
 class Hud;
 
+struct turretParticle
+{
+    sf::Vector2i coords;
+    Particle particle;
+};
+
 class Game
 {
 private:
@@ -20,6 +26,7 @@ private:
     AssetManager am;
     Hud *hud;
     std::vector<Particle> particles;
+    std::vector<turretParticle> turretParticles;
     std::vector<Projectile> projectiles;
 
     // Gameplay Variables
@@ -62,9 +69,11 @@ public:
     int selectedTileX = -1, selectedTileY = -1;
     bool buildMode = false;
 
+    bool isStarted = false;
     int hearts = 5;
     int crystals = 1000;
-    int wave = 0;
+    int crystalsEarned = 0;
+    int monstersKilled = 0;
 
     World *world;
 
@@ -78,6 +87,8 @@ public:
     sf::Sprite drawSprite(float x, float y, std::string spriteName, float scaleX = 1.f, float scaleY = 1.f, bool draw = true, bool reversed = false);
     sf::Text drawText(int x, int y, std::string text, int size, sf::Color color = sf::Color::White, bool centered = false, std::string font = "pixelmix", bool draw = true);
     void addParticle(Particle particle);
+    void addTurretParticle(Particle particle, int x, int y);
+    void destroyTurretParticle(int x, int y);
     void addProjectile(Projectile projectile);
 
     // Public Gamestate functions
@@ -85,4 +96,5 @@ public:
 
     bool checkIfValidTileSelected();
     bool checkIfValidTileHovered();
+    void clearParticlesAndProjectiles();
 };

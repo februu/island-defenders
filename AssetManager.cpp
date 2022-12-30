@@ -44,21 +44,17 @@ AssetManager::AssetManager()
     addSprite("wasp", false, "blue", 44, 0, 22, 19);
 
     // Loads turret sprites.
-    addSprite("turret_fire", false, "down", 0, 0, 22, 21);
-    addSprite("turret_fire", false, "right", 0, 21, 22, 21);
-    addSprite("turret_fire", false, "left", 0, 42, 22, 21);
-    addSprite("turret_fire", false, "up", 0, 63, 22, 21);
-    addSprite("turret_ice", false, "left", 21, 0, 20, 21);
-    addSprite("turret_ice", false, "right", 21, 0, 20, 21);
-    addSprite("turret_ice", false, "up", 21, 0, 20, 21);
-    addSprite("turret_ice", false, "down", 21, 0, 20, 21);
-    addSprite("turret_poison", false, "left", 21, 0, 20, 21);
-    addSprite("turret_poison", false, "right", 21, 0, 20, 21);
-    addSprite("turret_poison", false, "up", 21, 0, 20, 21);
-    addSprite("turret_poison", false, "down", 21, 0, 20, 21);
+    addSprite("turret", true);
+    addSprite("turret_ice", true);
+    addSprite("turret_fire", true);
+    addSprite("turret_magic", true);
+    addSprite("turret_poison", true);
 
     // Loads projectile and particle sprites.
     addSprite("projectile", true);
+    addSprite("projectile_ice", true);
+    addSprite("projectile_fire", true);
+    addSprite("projectile_magic", true);
     for (int i = 1; i <= 7; i++)
         addSprite("particles/gem" + std::to_string(i), true);
     for (int i = 1; i <= 9; i++)
@@ -67,6 +63,14 @@ AssetManager::AssetManager()
         addSprite("particles/hit" + std::to_string(i), true);
     for (int i = 1; i <= 4; i++)
         addSprite("particles/shine" + std::to_string(i), true);
+    for (int i = 1; i <= 5; i++)
+        addSprite("particles/fire" + std::to_string(i), true);
+    for (int i = 1; i <= 5; i++)
+        addSprite("particles/ice" + std::to_string(i), true);
+    for (int i = 1; i <= 5; i++)
+        addSprite("particles/magic" + std::to_string(i), true);
+    for (int i = 1; i <= 5; i++)
+        addSprite("particles/poison" + std::to_string(i), true);
 
     // Loads all fonts.
     sf::Font font;

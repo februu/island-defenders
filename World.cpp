@@ -22,7 +22,6 @@ World::~World()
         delete entities[i];
 }
 
-// TODO: World generation. Add conditions for tiles, mines, water etc.
 void World::createNewWorld()
 {
     srand((unsigned)time(NULL));
@@ -47,7 +46,7 @@ void World::createNewWorld()
     }
 
     // Adds water pools in available spaces.
-    for (int i = 8 + rand() % 5; i > 0; i--) // Amount of pools
+    for (int i = 4 + rand() % 5; i > 0; i--) // Amount of pools
     {
         int x = rand() % MAPSIZE;
         int y = rand() % MAPSIZE;
@@ -92,7 +91,7 @@ void World::createNewWorld()
     base_fragments3->createEntity(10, 11, "base", "", 0, 0, 9999, this);
     entities[11 * MAPSIZE + 11] = base_fragments3;
 
-    for (int i = 13 + rand() % 5; i > 0; i--)
+    for (int i = 7 + rand() % 5; i > 0; i--)
     {
         int x, y;
         do
@@ -113,15 +112,16 @@ Entity *World::getEntity(int x, int y)
     return entities[x * MAPSIZE + y];
 }
 
-void World::placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health)
+bool World::placeNewBuilding(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health)
 {
     if (!entities[x * MAPSIZE + y])
     {
         Building *building = new Building();
         building->createEntity(x, y, type, spriteName, xOffset, yOffset, health, this);
         entities[x * MAPSIZE + y] = building;
+        return true;
     }
-    return;
+    return false;
 }
 
 void World::destroyEntity(int x, int y)
@@ -131,7 +131,15 @@ void World::destroyEntity(int x, int y)
 
         // Checks if entity is an enemy - if yes, add crytals.
         if (getEntity(x, y)->getType() == "wasp" || getEntity(x, y)->getType() == "slime")
+        {
             game->crystals += 5;
+            game->monstersKilled++;
+            game->crystalsEarned += 20;
+        }
+        else if (getEntity(x, y)->getType() == "turret")
+        {
+            game->destroyTurretParticle(x, y);
+        }
 
         // Deletes entity.
         float scale = 1.5f;

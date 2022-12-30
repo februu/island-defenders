@@ -31,7 +31,9 @@ enum tiles
 // Prices
 enum prices
 {
-    TURRETPRICE = 250,
-    WALLPRICE = 100,
-    MINEPRICE = 400,
+    TURRETPRICE = 200,
+    FIRETURRETPRICE = 350,
+    ICETURRETPRICE = 100,
+    MAGICTURRETPRICE = 200,
+    MINEPRICE = 200,
 };

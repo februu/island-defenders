@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 
 #include "headers/Game.h"
 #include "headers/AssetManager.h"
@@ -9,6 +10,7 @@
 #include "headers/Constants.h"
 #include "headers/Entity.h"
 #include "headers/Projectile.h"
+#include <functional>
 
 Game::Game(int width, int height, float tileScale, bool fullScreenMode)
 {
@@ -117,6 +119,10 @@ void Game::update()
             if (particle->update(deltaTime))
                 particles.erase(particle--);
 
+        // Updates turret particles.
+        for (auto turretParticle = begin(turretParticles); turretParticle != end(turretParticles); ++turretParticle)
+            turretParticle->particle.update(deltaTime);
+
         // Calculates positions of projectiles.
         for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
             if (projectile->update(deltaTime))
@@ -218,8 +224,10 @@ void Game::createWindow()
     else
         window = new sf::RenderWindow(sf::VideoMode(screenWidth, screenHeight), "Island Defenders", sf::Style::Close);
     window->setMouseCursorVisible(false);
-    window->setFramerateLimit(120);
-    // TODO: window->setIcon()
+    window->setFramerateLimit(240);
+    sf::Image icon = sf::Image();
+    icon.loadFromFile("assets/icon.png");
+    window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 }
 
 void Game::changeGameState(int newGameState)
@@ -230,6 +238,12 @@ void Game::changeGameState(int newGameState)
     screenTransition[3] = newGameState;
 }
 
+void Game::clearParticlesAndProjectiles()
+{
+    projectiles.clear();
+    particles.clear();
+    turretParticles.clear();
+}
 // ================= Update Functions =================
 
 // Calculates hovered tile.
@@ -256,23 +270,42 @@ bool Game::checkIfValidTileHovered()
 
 void Game::callNewWave()
 {
-    // Runs every 3 seconds.
+
     if (timePassed > 5)
-        if (spawnTimer > 1)
+    {
+
+        if (!isStarted)
+        {
+            for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
+                if (world->entities[i])
+                    if (world->entities[i]->checkIfPathEmpty())
+                        world->entities[i]->findPath();
+            isStarted = true;
+        }
+
+        // Runs every 1 second.
+        if (spawnTimer > 2 - int(monstersKilled / 20) / 10)
         {
             spawnTimer = 0;
 
             // Spawns new wave of enemies.
-            for (int i = 0; i < rand() % 3 + 1; i++)
-            {
-                sf::Vector2i coords = randomizeSpawnTile();
-                Enemy *r_wasp = new Enemy(); // NEWUSE
-                r_wasp->createEntity(coords.x, coords.y, "wasp", "wasp_red", 5, 7, 3, world);
-                world->entities[coords.x * MAPSIZE + coords.y] = r_wasp;
-                r_wasp->findPath();
-                r_wasp->setTimeToNextMove(double(rand() % 50 / 100));
-            }
+
+            std::string enemyTypes[] = {"slime", "wasp"};
+            std::string enemyColors[] = {"red", "green", "blue"};
+            std::string enemyType = enemyTypes[rand() % 2];
+            sf::Vector2i coords = randomizeSpawnTile();
+            Enemy *r_wasp = new Enemy();
+            if (enemyType == "wasp")
+                r_wasp->createEntity(coords.x, coords.y, enemyType, "wasp_" + enemyColors[rand() % 3], 5, 7, 5 + world->difficulty + int(monstersKilled / 10), world);
+            else
+                r_wasp->createEntity(coords.x, coords.y, enemyType, "slime_" + enemyColors[rand() % 3], 9, 3, 7 + world->difficulty + int(monstersKilled / 10), world);
+            world->entities[coords.x * MAPSIZE + coords.y] = r_wasp;
+            r_wasp->setTimeToNextMove(double(rand() % 50 / 100));
+            r_wasp->findPath();
+            // sf::Thread thread(std::bind(&Entity::findPath, &(*r_wasp)));
+            // thread.launch();
         }
+    }
 }
 
 sf::Vector2i Game::randomizeSpawnTile()
@@ -334,6 +367,19 @@ sf::Text Game::drawText(int x, int y, std::string content, int size, sf::Color c
 void Game::addParticle(Particle particle)
 {
     particles.push_back(particle);
+}
+
+// Adds turret particle to vector.
+void Game::addTurretParticle(Particle particle, int x, int y)
+{
+    turretParticles.push_back({sf::Vector2i(x, y), particle});
+}
+
+void Game::destroyTurretParticle(int x, int y)
+{
+    for (auto turretParticle = begin(turretParticles); turretParticle != end(turretParticles); ++turretParticle)
+        if (turretParticle->coords.x == x && turretParticle->coords.y == y)
+            turretParticles.erase(turretParticle--);
 }
 
 // Adds projectile to vector.
@@ -428,6 +474,13 @@ void Game::drawEntities()
 // Draws particles.
 void Game::drawParticles()
 {
+    for (auto turretParticle = begin(turretParticles); turretParticle != end(turretParticles); ++turretParticle)
+    {
+        float x = turretParticle->particle.getPosition().x;
+        float y = turretParticle->particle.getPosition().y;
+        drawSprite(x, y, turretParticle->particle.getSpriteName(), turretParticle->particle.getScale() * tileScale, turretParticle->particle.getScale() * tileScale);
+    }
+
     for (auto particle = begin(particles); particle != end(particles); ++particle)
     {
         float x = particle->getPosition().x;
@@ -465,18 +518,6 @@ void Game::drawDebugInfo()
     drawText(10, 85, "screenTransitionValue=" + std::to_string(screenTransition[1]), 15);
     // delta time
     drawText(10, 100, "crystals=" + std::to_string(crystals), 15);
-
-    // === Entity Info ===
-
-    if (world->getEntity(selectedTileX, selectedTileY))
-    {
-        Entity *ent = world->getEntity(selectedTileX, selectedTileY);
-        drawText(10, 115, "entX=" + std::to_string(ent->getX()), 15);
-        drawText(10, 130, "entY=" + std::to_string(ent->getY()), 15);
-        drawText(10, 145, "isMoving=" + std::to_string(ent->getIsMoving()), 15);
-        drawText(10, 160, "timeToNextAction=" + std::to_string(ent->getTimeToNextMove()), 15);
-        drawText(10, 175, "health=" + std::to_string(ent->getHealth()), 15);
-    }
 }
 
 // Draws simple scene transition.

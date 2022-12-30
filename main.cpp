@@ -1,4 +1,4 @@
-#include "headers/settings.h"
+#include "headers/Settings.h"
 #include "headers/Game.h"
 
 int main()

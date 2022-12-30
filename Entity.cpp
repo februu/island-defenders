@@ -13,7 +13,6 @@
 Entity::Entity()
 {
 }
-
 Entity::~Entity()
 {
 }
@@ -94,6 +93,10 @@ int Entity::getIsMoving()
     return 0;
 }
 
+void Entity::setIsMoving(bool set)
+{
+}
+
 int Entity::getHealth()
 {
     return health;
@@ -113,6 +116,20 @@ void Entity::decreaseHealth(int damage)
 void Entity::setTimeToNextMove(double time)
 {
     this->timeToNextMove = time;
+}
+
+bool Entity::checkIfPathEmpty()
+{
+    return false;
+}
+
+void Entity::findPath()
+{
+}
+
+void Entity::setActionMultipier(int multiplier)
+{
+    actionTimeMultiplier = multiplier;
 }
 // ============================= Enemy Class =============================
 
@@ -218,9 +235,9 @@ void Enemy::performAction(double deltaTime)
 
     double moveSpeed = 0;
     if (type == "wasp")
-        moveSpeed = 0.5;
+        moveSpeed = 0.5 * actionTimeMultiplier;
     else if (type == "slime")
-        moveSpeed = 0.8;
+        moveSpeed = 0.8 * actionTimeMultiplier;
 
     if (!isMoving)
     {
@@ -248,7 +265,6 @@ void Enemy::performAction(double deltaTime)
                                 if (targetType == "base")
                                 {
                                     this->decreaseHealth(5);
-                                    // TODO: Add global life counter for base!!
                                 }
                                 return;
                             }
@@ -359,6 +375,16 @@ int Enemy::getIsMoving()
 {
     return isMoving;
 }
+
+void Enemy::setIsMoving(bool set)
+{
+    isMoving = set;
+}
+
+bool Enemy::checkIfPathEmpty()
+{
+    return pathBFS.empty();
+}
 // ============================= Building Class =============================
 
 Building::Building()
@@ -371,11 +397,18 @@ Building::~Building()
 
 void Building::createProjectile(int target_x, int target_y, Entity *enemy)
 {
-    int start_x = world->game->tileSize * x - world->game->tileSize * y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
-    int start_y = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset;
+    int start_x = world->game->tileSize * x - world->game->tileSize * y - world->game->tileSize + world->game->mapXOffset + 15 * world->game->tileScale;
+    int start_y = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset - 7 * world->game->tileScale;
     int dest_x = world->game->tileSize * target_x - world->game->tileSize * target_y - world->game->tileSize + world->game->mapXOffset + world->game->tileSize / 2;
     int dest_y = (world->game->tileSize * target_y + world->game->tileSize * target_x) / 2 + world->game->mapYOffset;
-    Projectile projectile(start_x, start_y, dest_x, dest_y, "projectile", enemy);
+    std::string projectileType = "projectile";
+    if (spriteName == "turret_ice")
+        projectileType = "projectile_ice";
+    else if (spriteName == "turret_fire")
+        projectileType = "projectile_fire";
+    else if (spriteName == "turret_magic")
+        projectileType = "projectile_magic";
+    Projectile projectile(start_x, start_y, dest_x, dest_y, projectileType, enemy);
     world->game->addProjectile(projectile);
     timeToNextMove = 0;
 }
@@ -396,7 +429,8 @@ void Building::performAction(double deltaTime)
             int mapY = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset - world->game->tileScale * 15 * scale;
             Particle particle(mapX, mapY, "particles/gem", 7, scale);
             world->game->addParticle(particle);
-            world->game->crystals += 10;
+            world->game->crystals += 20;
+            world->game->crystalsEarned += 20;
             timeToNextMove = 0;
         }
         return;

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 #include <vector>
 
 struct visitedTile
@@ -25,17 +26,21 @@ protected:
     std::string spriteName;
     World *world;
 
+    int actionTimeMultiplier = 1;
+
+    // sf::Thread m_thread;
+
 public:
-    Entity();
+    Entity(); // : m_thread(&Entity::findPath, this) {}
     ~Entity();
     void createEntity(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health, World *world);
     std::string getSpriteName();
     std::string getType();
-    int getXOffset();
-    int getYOffset();
     virtual void performAction(double time);
     int getX();
     int getY();
+    int getXOffset();
+    int getYOffset();
     World *getWorld();
     virtual float getMoveX();
     virtual float getMoveY();
@@ -43,8 +48,12 @@ public:
     virtual double getTimeToNextMove();
     virtual int getIsMoving();
     virtual int getDirection();
+    virtual bool checkIfPathEmpty();
+    virtual void findPath();
     void decreaseHealth(int dmg);
     void setTimeToNextMove(double time);
+    void setActionMultipier(int multiplier);
+    virtual void setIsMoving(bool set);
 };
 
 class Building : public Entity
@@ -73,6 +82,7 @@ private:
 
 public:
     Enemy();
+
     ~Enemy();
     void performAction(double time);
     float getMoveX();
@@ -80,4 +90,6 @@ public:
     int getDirection();
     int getIsMoving();
     void findPath();
+    bool checkIfPathEmpty();
+    void setIsMoving(bool set);
 };

@@ -33,10 +33,22 @@ bool Projectile::update(double deltaTime)
     x += tx / dist * 1000 * deltaTime;
     y += ty / dist * 1000 * deltaTime;
 
-    if (fabs(sqrt(pow((dest_x - x), 2) + pow((dest_y - y), 2))) < 10)
+    if (fabs(sqrt(pow((dest_x - x), 2) + pow((dest_y - y), 2))) < 20)
     {
         if (world->getEntity(enemy_x, enemy_y))
-            world->getEntity(enemy_x, enemy_y)->decreaseHealth(1);
+        {
+            if (spriteName == "projectile_ice")
+                world->getEntity(enemy_x, enemy_y)->setActionMultipier(2);
+            else if (spriteName == "projectile_magic")
+            {
+                world->getEntity(enemy_x, enemy_y)->setTimeToNextMove(-3);
+                world->getEntity(enemy_x, enemy_y)->setIsMoving(false);
+            }
+            else if (spriteName == "projectile_fire")
+                world->getEntity(enemy_x, enemy_y)->decreaseHealth(2);
+            else
+                world->getEntity(enemy_x, enemy_y)->decreaseHealth(1);
+        }
         return true;
     }
 

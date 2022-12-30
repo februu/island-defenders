@@ -18,8 +18,14 @@ bool Particle::update(double deltaTime)
 {
     if (time > 0.05) // Animation speed.
     {
-        if (frame > maxframe)
-            return true;
+        if (frame == maxframe)
+            if (spriteName == "particles/fire" || spriteName == "particles/magic" || spriteName == "particles/poison" || spriteName == "particles/ice")
+            {
+                frame = 1;
+                time = 0;
+            }
+            else
+                return true;
         else
         {
             frame++;
