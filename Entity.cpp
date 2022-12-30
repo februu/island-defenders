@@ -1,6 +1,7 @@
 #include "headers/Entity.h"
 #include "headers/World.h"
 #include "headers/Projectile.h"
+#include "headers/Particle.h"
 #include "headers/Constants.h"
 #include <algorithm>
 #include <cmath>
@@ -101,6 +102,8 @@ int Entity::getHealth()
 void Entity::decreaseHealth(int damage)
 {
     health -= damage;
+    if (type == "base")
+        world->game->hearts--;
     if (health <= 0)
     {
         world->destroyEntity(x, y);
@@ -151,24 +154,27 @@ void Enemy::findPath()
     {
         if (checkIfNotInVector(queue, sf::Vector2i(currentX + 1, currentY)) && currentX + 1 < MAPSIZE)
         {
-            if (world->tilemap[currentX + 1][currentY] != WATERTILE)
+            if (world->tilemap[currentX + 1][currentY] != WATERTILE && world->tilemap[currentX + 1][currentY] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX + 1, currentY), sf::Vector2i(currentX, currentY)});
         }
         if (checkIfNotInVector(queue, sf::Vector2i(currentX - 1, currentY)) && currentX - 1 >= 0)
         {
-            if (world->tilemap[currentX - 1][currentY] != WATERTILE)
+            if (world->tilemap[currentX - 1][currentY] != WATERTILE && world->tilemap[currentX - 1][currentY] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX - 1, currentY), sf::Vector2i(currentX, currentY)});
         }
         if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY + 1)) && currentY + 1 < MAPSIZE)
         {
-            if (world->tilemap[currentX][currentY + 1] != WATERTILE)
+            if (world->tilemap[currentX][currentY + 1] != WATERTILE && world->tilemap[currentX][currentY + 1] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX, currentY + 1), sf::Vector2i(currentX, currentY)});
         }
         if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY - 1)) && currentY - 1 >= 0)
         {
-            if (world->tilemap[currentX][currentY - 1] != WATERTILE)
+            if (world->tilemap[currentX][currentY - 1] != WATERTILE && world->tilemap[currentX][currentY - 1] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX, currentY - 1), sf::Vector2i(currentX, currentY)});
         }
+
+        if (queue.size() == 0)
+            break;
 
         currentX = queue.front().vertex.x;
         currentY = queue.front().vertex.y;
@@ -198,7 +204,7 @@ bool Enemy::checkForNearBuildings()
             if (target_x == x && target_y == y)
                 continue;
             if (world->getEntity(target_x, target_y))
-                if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base")
+                if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base" || world->getEntity(target_x, target_y)->getType() == "mine")
                 {
                     return true;
                 }
@@ -227,10 +233,23 @@ void Enemy::performAction(double deltaTime)
                         if (target_x == x && target_y == y)
                             continue;
                         if (world->getEntity(target_x, target_y))
-                            if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base")
+                            if (world->getEntity(target_x, target_y)->getType() == "turret" || world->getEntity(target_x, target_y)->getType() == "base" || world->getEntity(target_x, target_y)->getType() == "mine")
                             {
+                                std::string targetType = world->getEntity(target_x, target_y)->getType();
                                 world->getEntity(target_x, target_y)->decreaseHealth(1);
+
+                                float scale = 1.5f;
+                                int mapX = world->game->tileSize * target_x - world->game->tileSize * target_y - world->game->tileSize + world->game->mapXOffset + 3 * world->game->tileScale * scale;
+                                int mapY = (world->game->tileSize * target_y + world->game->tileSize * target_x) / 2 + world->game->mapYOffset - world->game->tileScale * scale - 4 * world->game->tileScale;
+                                Particle particle(mapX, mapY, "particles/hit", 6, scale);
+                                world->game->addParticle(particle);
+
                                 timeToNextMove = 0;
+                                if (targetType == "base")
+                                {
+                                    this->decreaseHealth(5);
+                                    // TODO: Add global life counter for base!!
+                                }
                                 return;
                             }
                             else
@@ -242,6 +261,7 @@ void Enemy::performAction(double deltaTime)
                 // Chooses most optimal direction.
                 if (pathBFS.empty())
                     return;
+                // findPath();
 
                 int new_x = pathBFS.back().x, new_y = pathBFS.back().y;
 
@@ -358,15 +378,30 @@ void Building::createProjectile(int target_x, int target_y, Entity *enemy)
     Projectile projectile(start_x, start_y, dest_x, dest_y, "projectile", enemy);
     world->game->addProjectile(projectile);
     timeToNextMove = 0;
-    return;
 }
 
 void Building::performAction(double deltaTime)
 {
-    if (type == "base" || type == "mine")
+    if (type == "base" || type == "wall" || type == "tree")
         return;
 
     timeToNextMove += deltaTime;
+
+    if (type == "mine")
+    {
+        if (timeToNextMove > 5)
+        {
+            float scale = 1.f;
+            int mapX = world->game->tileSize * x - world->game->tileSize * y - world->game->tileSize + world->game->mapXOffset + 0.5 * world->game->tileSize * world->game->tileScale - world->game->tileScale * 3 * scale;
+            int mapY = (world->game->tileSize * y + world->game->tileSize * x) / 2 + world->game->mapYOffset - world->game->tileScale * 15 * scale;
+            Particle particle(mapX, mapY, "particles/gem", 7, scale);
+            world->game->addParticle(particle);
+            world->game->crystals += 10;
+            timeToNextMove = 0;
+        }
+        return;
+    }
+
     if (timeToNextMove > 0.3)
     {
 
@@ -386,6 +421,8 @@ void Building::performAction(double deltaTime)
                             enemies.push_back(world->getEntity(target_x, target_y));
                         }
                 }
+            if (enemies.size() > 0)
+                break;
         }
 
         // Searches for an enemy with the shortest distance.

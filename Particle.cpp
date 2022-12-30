@@ -3,21 +3,22 @@
 #include "headers/Constants.h"
 #include "headers/AssetManager.h"
 
-Particle::Particle(int x, int y, std::string spriteName, int maxframe)
+Particle::Particle(int x, int y, std::string spriteName, int maxframe, float scale)
 {
     this->x = x;
     this->y = y;
     this->spriteName = spriteName;
     this->maxframe = maxframe;
+    this->scale = scale;
 }
 
 Particle::~Particle() {}
 
 bool Particle::update(double deltaTime)
 {
-    if (time > 0.25) // Animation speed.
+    if (time > 0.05) // Animation speed.
     {
-        if (frame >= maxframe)
+        if (frame > maxframe)
             return true;
         else
         {
@@ -37,5 +38,10 @@ sf::Vector2i Particle::getPosition()
 
 std::string Particle::getSpriteName()
 {
-    return spriteName;
+    return spriteName + std::to_string(frame);
+}
+
+float Particle::getScale()
+{
+    return scale;
 }

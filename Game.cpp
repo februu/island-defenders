@@ -112,7 +112,11 @@ void Game::update()
                 }
             }
 
-        // TODO: Add the same block of code for particles.
+        // Updates particles.
+        for (auto particle = begin(particles); particle != end(particles); ++particle)
+            if (particle->update(deltaTime))
+                particles.erase(particle--);
+
         // Calculates positions of projectiles.
         for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
             if (projectile->update(deltaTime))
@@ -120,6 +124,10 @@ void Game::update()
 
         // Spawns new wave of enemies if current one is over.
         callNewWave();
+
+        // Checks if hp is below 5.
+        if (hearts <= 0)
+            changeGameState(SCORE);
     }
 
     // Sets selected item.
@@ -154,6 +162,8 @@ void Game::draw()
         drawProjectiles();
         drawParticles();
         hud->drawGameHud(20);
+        if (timePassed < 5)
+            drawText(screenWidth / 2, tileScale * 9, "Starting in " + std::to_string(int(5 - timePassed)) + "...", tileScale * 8 * 2, sf::Color::White, true);
         break;
 
     // Game Over / Score screen
@@ -215,6 +225,8 @@ void Game::createWindow()
 void Game::changeGameState(int newGameState)
 {
     screenTransition[0] = 1;
+    if (newGameState == GAME)
+        timePassed = 0;
     screenTransition[3] = newGameState;
 }
 
@@ -245,21 +257,22 @@ bool Game::checkIfValidTileHovered()
 void Game::callNewWave()
 {
     // Runs every 3 seconds.
-    if (spawnTimer > 3)
-    {
-        spawnTimer = 0;
-
-        // Spawns new wave of enemies.
-        for (int i = 0; i < rand() % 20 + 1; i++)
+    if (timePassed > 5)
+        if (spawnTimer > 1)
         {
-            sf::Vector2i coords = randomizeSpawnTile();
-            Enemy *r_wasp = new Enemy(); // NEWUSE
-            r_wasp->createEntity(coords.x, coords.y, "wasp", "wasp_red", 5, 7, 3, world);
-            world->entities[coords.x * MAPSIZE + coords.y] = r_wasp;
-            r_wasp->findPath();
-            r_wasp->setTimeToNextMove(double(rand() % 50 / 100));
+            spawnTimer = 0;
+
+            // Spawns new wave of enemies.
+            for (int i = 0; i < rand() % 3 + 1; i++)
+            {
+                sf::Vector2i coords = randomizeSpawnTile();
+                Enemy *r_wasp = new Enemy(); // NEWUSE
+                r_wasp->createEntity(coords.x, coords.y, "wasp", "wasp_red", 5, 7, 3, world);
+                world->entities[coords.x * MAPSIZE + coords.y] = r_wasp;
+                r_wasp->findPath();
+                r_wasp->setTimeToNextMove(double(rand() % 50 / 100));
+            }
         }
-    }
 }
 
 sf::Vector2i Game::randomizeSpawnTile()
@@ -343,6 +356,9 @@ void Game::drawMap()
             case REGULARTILE:
                 drawSprite(mapX, mapY, "tile", tileScale, tileScale);
                 break;
+            case TREETILE:
+                drawSprite(mapX, mapY, "tile", tileScale, tileScale);
+                break;
             case GRASSTILE:
                 drawSprite(mapX, mapY, "tile_grass", tileScale, tileScale);
                 break;
@@ -412,10 +428,15 @@ void Game::drawEntities()
 // Draws particles.
 void Game::drawParticles()
 {
-    // TODO: Loop though vector.
+    for (auto particle = begin(particles); particle != end(particles); ++particle)
+    {
+        float x = particle->getPosition().x;
+        float y = particle->getPosition().y;
+        drawSprite(x, y, particle->getSpriteName(), particle->getScale() * tileScale, particle->getScale() * tileScale);
+    }
 }
 
-// Draws particles.
+// Draws projectiles.
 void Game::drawProjectiles()
 {
     for (auto projectile = begin(projectiles); projectile != end(projectiles); ++projectile)
@@ -443,7 +464,7 @@ void Game::drawDebugInfo()
     // screen transition value
     drawText(10, 85, "screenTransitionValue=" + std::to_string(screenTransition[1]), 15);
     // delta time
-    drawText(10, 100, "deltaTime=" + std::to_string(deltaTime * 1000), 15);
+    drawText(10, 100, "crystals=" + std::to_string(crystals), 15);
 
     // === Entity Info ===
 
@@ -454,7 +475,7 @@ void Game::drawDebugInfo()
         drawText(10, 130, "entY=" + std::to_string(ent->getY()), 15);
         drawText(10, 145, "isMoving=" + std::to_string(ent->getIsMoving()), 15);
         drawText(10, 160, "timeToNextAction=" + std::to_string(ent->getTimeToNextMove()), 15);
-        drawText(10, 175, "ealth=" + std::to_string(ent->getHealth()), 15);
+        drawText(10, 175, "health=" + std::to_string(ent->getHealth()), 15);
     }
 }
 

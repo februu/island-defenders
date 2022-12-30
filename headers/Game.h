@@ -62,6 +62,8 @@ public:
     int selectedTileX = -1, selectedTileY = -1;
     bool buildMode = false;
 
+    int hearts = 5;
+    int crystals = 1000;
     int wave = 0;
 
     World *world;

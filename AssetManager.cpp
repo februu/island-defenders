@@ -13,10 +13,15 @@ AssetManager::AssetManager()
     addSprite("info_hud", true);
     addSprite("build_hud", true);
     addSprite("build_hud_selected", true);
+    addSprite("build_hud_disabled", true);
     addSprite("overlay", true);
+    addSprite("gem", true);
+    addSprite("heart", true);
 
     // Loads building sprites
     addSprite("main_base", true);
+    addSprite("mine", true);
+    addSprite("tree", true);
 
     // Loads tile sprites.
     addSprite("tile", false, "", 0, 0, 32, 26);
@@ -54,6 +59,14 @@ AssetManager::AssetManager()
 
     // Loads projectile and particle sprites.
     addSprite("projectile", true);
+    for (int i = 1; i <= 7; i++)
+        addSprite("particles/gem" + std::to_string(i), true);
+    for (int i = 1; i <= 9; i++)
+        addSprite("particles/explosion" + std::to_string(i), true);
+    for (int i = 1; i <= 6; i++)
+        addSprite("particles/hit" + std::to_string(i), true);
+    for (int i = 1; i <= 4; i++)
+        addSprite("particles/shine" + std::to_string(i), true);
 
     // Loads all fonts.
     sf::Font font;

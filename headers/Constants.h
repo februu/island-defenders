@@ -19,9 +19,19 @@ enum gameStates
 enum tiles
 {
     REGULARTILE,
+    TREETILE,
     GRASSTILE,
     ROCKTILE,
     PLANTTILE,
     MINETILE,
-    WATERTILE
+    WATERTILE,
+
+};
+
+// Prices
+enum prices
+{
+    TURRETPRICE = 250,
+    WALLPRICE = 100,
+    MINEPRICE = 400,
 };

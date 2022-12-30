@@ -41,7 +41,7 @@ void World::createNewWorld()
         this->tilemap[rand() % MAPSIZE][rand() % MAPSIZE] = rand() % 3 + 1; // Sets array to REGULARTILE, GRASSTILE, ROCKTILE or PLANTTILE
     }
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 8; i++)
     {
         this->tilemap[rand() % MAPSIZE][rand() % MAPSIZE] = MINETILE; // Sets array to REGULARTILE, GRASSTILE, ROCKTILE, PLANTTILE or MINETILE.
     }
@@ -70,6 +70,11 @@ void World::createNewWorld()
             }
     }
 
+    // Generates tilemap.
+    for (int i = 9; i < 13; i++)
+        for (int j = 9; j < 13; j++)
+            this->tilemap[i][j] = rand() % 3 + 1;
+
     // Creates entities.
     Building *main_base = new Building();
     main_base->createEntity(10, 10, "base", "main_base", -11, 25, 9999, this);
@@ -86,6 +91,21 @@ void World::createNewWorld()
     Building *base_fragments3 = new Building();
     base_fragments3->createEntity(10, 11, "base", "", 0, 0, 9999, this);
     entities[11 * MAPSIZE + 11] = base_fragments3;
+
+    for (int i = 13 + rand() % 5; i > 0; i--)
+    {
+        int x, y;
+        do
+        {
+            x = rand() % MAPSIZE;
+            y = rand() % MAPSIZE;
+        } while (getEntity(x, y) || tilemap[x][y] == WATERTILE || tilemap[x][y] == MINETILE);
+
+        Building *tree = new Building();
+        tree->createEntity(x, y, "tree", "tree", 8, 15, 9999, this);
+        entities[x * MAPSIZE + y] = tree;
+        tilemap[x][y] = TREETILE;
+    }
 }
 
 Entity *World::getEntity(int x, int y)
@@ -108,6 +128,17 @@ void World::destroyEntity(int x, int y)
 {
     if (getEntity(x, y))
     {
+
+        // Checks if entity is an enemy - if yes, add crytals.
+        if (getEntity(x, y)->getType() == "wasp" || getEntity(x, y)->getType() == "slime")
+            game->crystals += 5;
+
+        // Deletes entity.
+        float scale = 1.5f;
+        int mapX = game->tileSize * x - game->tileSize * y - game->tileSize + game->mapXOffset + 3 * game->tileScale * scale;
+        int mapY = (game->tileSize * y + game->tileSize * x) / 2 + game->mapYOffset - game->tileScale * scale - 4 * game->tileScale;
+        Particle particle(mapX, mapY, "particles/explosion", 9, scale);
+        game->addParticle(particle);
         delete getEntity(x, y);
         entities[x * MAPSIZE + y] = nullptr;
     }
