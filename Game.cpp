@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
@@ -10,7 +9,6 @@
 #include "headers/Constants.h"
 #include "headers/Entity.h"
 #include "headers/Projectile.h"
-#include <functional>
 
 Game::Game(int width, int height, float tileScale, bool fullScreenMode)
 {

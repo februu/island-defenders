@@ -1,9 +1,9 @@
 #include <string>
 #include <cmath>
 #include <SFML/Graphics.hpp>
+
 #include "headers/Projectile.h"
 #include "headers/World.h"
-#include <iostream>
 
 Projectile::Projectile(int x, int y, int dest_x, int dest_y, std::string spriteName, Entity *enemy)
 {

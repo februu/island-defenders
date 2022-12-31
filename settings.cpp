@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
+
 #include "headers/Settings.h"
 #include "headers/Constants.h"
 #include "headers/Entity.h"

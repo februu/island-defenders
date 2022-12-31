@@ -1,5 +1,5 @@
-COMPILEFLAGS	 = -I"C:\SFML-2.5.1\include" -DSFML_STATIC
-LINKFLAGS	 = -o main -L"C:\SFML-2.5.1\lib" -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lsfml-main
+COMPILEFLAGS	 = -I"libs\include" -DSFML_STATIC
+LINKFLAGS	 = -o main -L"libs\lib" -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lsfml-main -mwindows
 
 all: preclean compile link clean
 
@@ -15,7 +15,7 @@ compile:
 	g++ $(COMPILEFLAGS) -c Projectile.cpp
 
 link:
-	g++ main.o Settings.o Game.o Hud.o AssetManager.o Entity.o World.o Particle.o Projectile.o $(LINKFLAGS)
+	g++ main.o Settings.o Game.o Hud.o AssetManager.o Entity.o World.o Particle.o Projectile.o res/icon.res res/info.res $(LINKFLAGS)
 
 clean:
 	del *.o

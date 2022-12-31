@@ -1,8 +1,8 @@
-#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 #include <SFML/Graphics.hpp>
+
 #include "headers\AssetManager.h"
 
 AssetManager::AssetManager()

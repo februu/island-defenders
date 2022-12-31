@@ -1,6 +1,5 @@
 #include <SFML/Graphics.hpp>
 #include <algorithm>
-#include <iostream>
 #include <string>
 
 #include "headers/World.h"

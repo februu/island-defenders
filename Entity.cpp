@@ -1,12 +1,12 @@
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 #include "headers/Entity.h"
 #include "headers/World.h"
 #include "headers/Projectile.h"
 #include "headers/Particle.h"
 #include "headers/Constants.h"
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <vector>
 
 // ============================= Entity Class =============================
 

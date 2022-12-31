@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+
 #include "headers/Particle.h"
 #include "headers/Constants.h"
 #include "headers/AssetManager.h"

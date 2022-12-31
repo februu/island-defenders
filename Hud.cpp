@@ -1,12 +1,12 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <cmath>
+
 #include "headers/Hud.h"
 #include "headers/Game.h"
 #include "headers/Constants.h"
 #include "headers/Particle.h"
 #include "headers/Settings.h"
-#include <iostream>
-#include <cmath>
 
 Hud::Hud(Game *game)
 {
@@ -57,7 +57,7 @@ void Hud::executeMenuAction()
 
             break;
         case 3:
-            system("start https://github.com/februu");
+            system("start https://februu.me/island-defenders/");
             break;
         case 4:
             game->changeGameState(CREDITS);
@@ -341,7 +341,7 @@ void Hud::drawGameHud(int wave)
                 else if (type == "turret")
                 {
                     int descSwitch;
-                    std::string desc[] = {"ICE TURRET", "Approved by zabson & young igi.", "Effect: Slows enemies.", "FIRE TURRET", "", "Effect: Does double the damage.", "MAGIC TURRET", "", "Effect: Stuns enemies.", "BASIC TURRET", "Reliable way to deal with monsters.", ""};
+                    std::string desc[] = {"ICE TURRET", "Reliable way to deal with monsters.", "Effect: Slows enemies.", "FIRE TURRET", "Reliable way to deal with monsters.", "Effect: Does double the damage.", "MAGIC TURRET", "Reliable way to deal with monsters.", "Effect: Stuns enemies.", "BASIC TURRET", "Reliable way to deal with monsters.", ""};
                     std::string turretType = game->world->getEntity(game->hoveredTileX, game->hoveredTileY)->getSpriteName();
 
                     if (turretType == "turret_ice")
