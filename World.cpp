@@ -134,7 +134,7 @@ void World::destroyEntity(int x, int y)
         {
             game->crystals += 5;
             game->monstersKilled++;
-            game->crystalsEarned += 20;
+            game->crystalsEarned += 5;
         }
         else if (getEntity(x, y)->getType() == "turret")
         {

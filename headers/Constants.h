@@ -19,13 +19,12 @@ enum gameStates
 enum tiles
 {
     REGULARTILE,
-    TREETILE,
     GRASSTILE,
     ROCKTILE,
     PLANTTILE,
     MINETILE,
     WATERTILE,
-
+    TREETILE,
 };
 
 // Prices

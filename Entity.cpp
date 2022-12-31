@@ -13,6 +13,7 @@
 Entity::Entity()
 {
 }
+
 Entity::~Entity()
 {
 }
@@ -131,6 +132,7 @@ void Entity::setActionMultipier(int multiplier)
 {
     actionTimeMultiplier = multiplier;
 }
+
 // ============================= Enemy Class =============================
 
 Enemy::Enemy()
@@ -160,6 +162,7 @@ bool checkIfNotInVector(std::vector<visitedTile> queue, sf::Vector2i newVertex)
 
 void Enemy::findPath()
 {
+
     dest_x = 11;
     dest_y = 11;
     std::vector<visitedTile> queue;
@@ -385,6 +388,7 @@ bool Enemy::checkIfPathEmpty()
 {
     return pathBFS.empty();
 }
+
 // ============================= Building Class =============================
 
 Building::Building()

@@ -341,7 +341,7 @@ void Hud::drawGameHud(int wave)
                 else if (type == "turret")
                 {
                     int descSwitch;
-                    std::string desc[] = {"ICE TURRET", "", "", "FIRE TURRET", "", "", "MAGIC TURRET", "", "", "BASIC TURRET", "", ""};
+                    std::string desc[] = {"ICE TURRET", "Approved by zabson & young igi.", "Effect: Slows enemies.", "FIRE TURRET", "", "Effect: Does double the damage.", "MAGIC TURRET", "", "Effect: Stuns enemies.", "BASIC TURRET", "Reliable way to deal with monsters.", ""};
                     std::string turretType = game->world->getEntity(game->hoveredTileX, game->hoveredTileY)->getSpriteName();
 
                     if (turretType == "turret_ice")
@@ -462,7 +462,7 @@ void Hud::drawScore()
 
 void Hud::drawCredits()
 {
-    std::string items[] = {"Island Defenders", "sp. z.o.o.", "", "nie no jk", "made by febru"};
+    std::string items[] = {"Island Defenders", "coding & depression", "febru", "graphic", "febru & smok18krolczarownic aka mlodymichal", "music", "miala byc xd"};
     game->drawSprite(0, 0, "overlay", game->screenWidth, game->screenHeight);
     game->drawText(game->mapXOffset, game->screenHeight / 2 - (size / 2) - 2 * (smallSize + offset), "CREDITS", size, sf::Color::White, true, "arcade");
     for (int i = -2; i < 3; i++)
