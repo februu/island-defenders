@@ -68,7 +68,7 @@ void World::createNewWorld()
             }
     }
 
-    // Generates tilemap.
+    // Generates grass under altar.
     for (int i = 9; i < 13; i++)
         for (int j = 9; j < 13; j++)
             this->tilemap[i][j] = rand() % 3 + 1;

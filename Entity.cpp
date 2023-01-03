@@ -133,6 +133,16 @@ void Entity::setActionMultipier(int multiplier)
     actionTimeMultiplier = multiplier;
 }
 
+void Entity::stun()
+{
+    if (!wasStunned)
+    {
+        setTimeToNextMove(-3);
+        setIsMoving(false);
+        wasStunned = true;
+    }
+}
+
 // ============================= Enemy Class =============================
 
 Enemy::Enemy()
@@ -173,25 +183,20 @@ void Enemy::findPath()
     while (maxsteps > 0)
     {
         if (checkIfNotInVector(queue, sf::Vector2i(currentX + 1, currentY)) && currentX + 1 < MAPSIZE)
-        {
             if (world->tilemap[currentX + 1][currentY] != WATERTILE && world->tilemap[currentX + 1][currentY] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX + 1, currentY), sf::Vector2i(currentX, currentY)});
-        }
+
         if (checkIfNotInVector(queue, sf::Vector2i(currentX - 1, currentY)) && currentX - 1 >= 0)
-        {
             if (world->tilemap[currentX - 1][currentY] != WATERTILE && world->tilemap[currentX - 1][currentY] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX - 1, currentY), sf::Vector2i(currentX, currentY)});
-        }
+
         if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY + 1)) && currentY + 1 < MAPSIZE)
-        {
             if (world->tilemap[currentX][currentY + 1] != WATERTILE && world->tilemap[currentX][currentY + 1] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX, currentY + 1), sf::Vector2i(currentX, currentY)});
-        }
+
         if (checkIfNotInVector(queue, sf::Vector2i(currentX, currentY - 1)) && currentY - 1 >= 0)
-        {
             if (world->tilemap[currentX][currentY - 1] != WATERTILE && world->tilemap[currentX][currentY - 1] != TREETILE)
                 queue.push_back({sf::Vector2i(currentX, currentY - 1), sf::Vector2i(currentX, currentY)});
-        }
 
         if (queue.size() == 0)
             break;
@@ -267,7 +272,7 @@ void Enemy::performAction(double deltaTime)
                                 timeToNextMove = 0;
                                 if (targetType == "base")
                                 {
-                                    this->decreaseHealth(5);
+                                    this->decreaseHealth(100);
                                 }
                                 return;
                             }

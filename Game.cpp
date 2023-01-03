@@ -167,7 +167,7 @@ void Game::draw()
         drawParticles();
         hud->drawGameHud(20);
         if (timePassed < 5)
-            drawText(screenWidth / 2, tileScale * 9, "Starting in " + std::to_string(int(5 - timePassed)) + "...", tileScale * 8 * 2, sf::Color::White, true);
+            drawText(screenWidth / 2, tileScale * 16, "Starting in " + std::to_string(int(5 - timePassed)) + "...", tileScale * 8 * 2, sf::Color::White, true);
         break;
 
     // Game Over / Score screen

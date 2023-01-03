@@ -18,6 +18,7 @@ class Entity
 protected:
     int x, y;
     int dest_x = -1, dest_y = -1;
+    bool wasStunned = false;
     int xOffset, yOffset;
     int damage;
     int health;
@@ -25,13 +26,10 @@ protected:
     std::string type;
     std::string spriteName;
     World *world;
-
     int actionTimeMultiplier = 1;
 
-    // sf::Thread m_thread;
-
 public:
-    Entity(); // : m_thread(&Entity::findPath, this) {}
+    Entity();
     ~Entity();
     void createEntity(int x, int y, std::string type, std::string spriteName, int xOffset, int yOffset, int health, World *world);
     std::string getSpriteName();
@@ -54,13 +52,12 @@ public:
     void setTimeToNextMove(double time);
     void setActionMultipier(int multiplier);
     virtual void setIsMoving(bool set);
+    void stun();
 };
 
 class Building : public Entity
 {
 private:
-    int upgrades;
-
 public:
     Building();
     ~Building();
@@ -72,12 +69,10 @@ class Enemy : public Entity
 {
 private:
     bool isMoving = false;
+
     int direction = 0; // 0 - gora, 1 - prawo, 2 - dol, 3 - lewo
     float moveX = 0.f, moveY = 0.f;
-    int damage = 0;
-    std::vector<int> debuffs;
     std::vector<sf::Vector2i> pathBFS;
-    void chooseNewTile(int *new_x, int *new_y);
     bool checkForNearBuildings();
 
 public:

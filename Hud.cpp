@@ -57,7 +57,7 @@ void Hud::executeMenuAction()
 
             break;
         case 3:
-            system("start https://februu.me/island-defenders/");
+            system("start https://febru.me/island-defenders/");
             break;
         case 4:
             game->changeGameState(CREDITS);
@@ -116,7 +116,7 @@ void Hud::executeMenuAction()
             break;
         case 1:
             if (game->crystals >= TURRETPRICE)
-                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret", 7, 8, 10))
+                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret", 7, 8, TURRETHEALTH))
                 {
                     game->crystals -= TURRETPRICE;
                     int mapX = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset + 13 * game->tileScale;
@@ -131,7 +131,7 @@ void Hud::executeMenuAction()
             break;
         case 2:
             if (game->crystals >= ICETURRETPRICE)
-                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_ice", 7, 8, 10))
+                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_ice", 7, 8, ICETURRETHEALTH))
                 {
                     game->crystals -= ICETURRETPRICE;
                     int mapX = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset + 13 * game->tileScale;
@@ -146,7 +146,7 @@ void Hud::executeMenuAction()
             break;
         case 3:
             if (game->crystals >= FIRETURRETPRICE)
-                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire", 7, 8, 10))
+                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_fire", 7, 8, FIRETURRETHEALTH))
                 {
                     game->crystals -= FIRETURRETPRICE;
                     int mapX = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset + 13 * game->tileScale;
@@ -161,7 +161,7 @@ void Hud::executeMenuAction()
             break;
         case 4:
             if (game->crystals >= MAGICTURRETPRICE)
-                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_magic", 7, 8, 10))
+                if (game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "turret", "turret_magic", 7, 8, MAGICTURRETHEALTH))
                 {
                     game->crystals -= MAGICTURRETPRICE;
                     int mapX = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset + 13 * game->tileScale;
@@ -179,7 +179,7 @@ void Hud::executeMenuAction()
             {
                 if (game->world->tilemap[game->selectedTileX][game->selectedTileY] == MINETILE)
                 {
-                    game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "mine", "mine", 3, 2, 5);
+                    game->world->placeNewBuilding(game->selectedTileX, game->selectedTileY, "mine", "mine", 3, 2, MINEHEALTH);
                     game->crystals -= MINEPRICE;
                 }
 
@@ -306,13 +306,11 @@ void Hud::drawGameHud(int wave)
 {
     // Draws crystals.
     game->drawSprite(game->tileScale * 8, game->tileScale * 8, "gem", 2 * game->tileScale, 2 * game->tileScale);
-    game->drawText(game->tileScale * 8 + 12 * 2 * game->tileScale, game->tileScale * 9, std::to_string(game->crystals), game->tileScale * 8 * 2); // FIXME
+    game->drawText(game->tileScale * 8 + 12 * 2 * game->tileScale, game->tileScale * 9, std::to_string(game->crystals), game->tileScale * 8 * 2);
 
     // Draws hearts.
     for (int i = 0; i < game->hearts; i++)
-    {
         game->drawSprite(game->screenWidth - (game->tileScale * 8) - (2 * game->tileScale * 11) - (i * (game->tileScale * (4 + 2 * 11))), game->tileScale * 8, "heart", 2 * game->tileScale, 2 * game->tileScale);
-    }
 
     // Draws Info Panel
     if (game->checkIfValidTileHovered())
@@ -340,24 +338,32 @@ void Hud::drawGameHud(int wave)
                 }
                 else if (type == "turret")
                 {
-                    int descSwitch;
+                    int descSwitch = 9;
                     std::string desc[] = {"ICE TURRET", "Reliable way to deal with monsters.", "Effect: Slows enemies.", "FIRE TURRET", "Reliable way to deal with monsters.", "Effect: Does double the damage.", "MAGIC TURRET", "Reliable way to deal with monsters.", "Effect: Stuns enemies.", "BASIC TURRET", "Reliable way to deal with monsters.", ""};
                     std::string turretType = game->world->getEntity(game->hoveredTileX, game->hoveredTileY)->getSpriteName();
+                    int turretHealth = TURRETHEALTH;
 
                     if (turretType == "turret_ice")
+                    {
                         descSwitch = 0;
+                        turretHealth = ICETURRETHEALTH;
+                    }
                     else if (turretType == "turret_fire")
+                    {
                         descSwitch = 3;
+                        turretHealth = FIRETURRETHEALTH;
+                    }
                     else if (turretType == "turret_magic")
+                    {
                         descSwitch = 6;
-                    else
-                        descSwitch = 9;
+                        turretHealth = MAGICTURRETHEALTH;
+                    }
 
                     game->drawSprite(ix + 10 * game->tileScale, iy + 8 * game->tileScale, ent->getSpriteName(), 1.5 * game->tileScale, 1.5 * game->tileScale);
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 0.75, desc[descSwitch], 6 * game->tileScale);
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 1.75, desc[descSwitch + 1], 6 * game->tileScale);
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 2.75, desc[descSwitch + 2], 6 * game->tileScale);
-                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "HP: " + std::to_string(ent->getHealth()) + "/10", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "HP: " + std::to_string(ent->getHealth()) + "/" + std::to_string(turretHealth), 6 * game->tileScale);
                 }
                 else if (type == "mine")
                 {
@@ -365,7 +371,7 @@ void Hud::drawGameHud(int wave)
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 0.75, "MINE", 6 * game->tileScale);
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 1.75, "Mines 20 crystals every 5 seconds.", 6 * game->tileScale);
                     game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 2.75, "Next delivery in " + std::to_string(5 - int(ent->getTimeToNextMove())) + " seconds...", 6 * game->tileScale);
-                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "HP: " + std::to_string(ent->getHealth()) + "/5", 6 * game->tileScale);
+                    game->drawText(ix + (8 + 40) * game->tileScale, iy + (6 * 1.5 * game->tileScale) * 3.75, "HP: " + std::to_string(ent->getHealth()) + "/" + std::to_string(MINEHEALTH), 6 * game->tileScale);
                 }
                 else if (type == "tree")
                 {
@@ -378,7 +384,7 @@ void Hud::drawGameHud(int wave)
     }
 
     // Draws Build Menu.
-    if (game->checkIfValidTileSelected() && game->buildMode && game->world->tilemap[game->selectedTileX][game->selectedTileY] != WATERTILE && game->world->entities[game->selectedTileX * MAPSIZE + game->selectedTileY] == nullptr)
+    if (game->checkIfValidTileSelected() && game->buildMode && game->world->tilemap[game->selectedTileX][game->selectedTileY] != WATERTILE && !game->world->entities[game->selectedTileX * MAPSIZE + game->selectedTileY])
     {
         int x = game->tileSize * game->selectedTileX - game->tileSize * game->selectedTileY - game->tileSize + game->mapXOffset;
         int y = (game->tileSize * game->selectedTileY + game->tileSize * game->selectedTileX) / 2 + game->mapYOffset;
@@ -462,7 +468,13 @@ void Hud::drawScore()
 
 void Hud::drawCredits()
 {
-    std::string items[] = {"Island Defenders", "coding & depression", "febru", "graphic", "febru & smok18krolczarownic aka mlodymichal", "music", "miala byc xd"};
+    std::string items[] = {
+        "coding:",
+        "@febru",
+        "graphics:",
+        "@febru & @smok18krolczarownic aka mlodymichal",
+        "febru.me/island-defenders/",
+    };
     game->drawSprite(0, 0, "overlay", game->screenWidth, game->screenHeight);
     game->drawText(game->mapXOffset, game->screenHeight / 2 - (size / 2) - 2 * (smallSize + offset), "CREDITS", size, sf::Color::White, true, "arcade");
     for (int i = -2; i < 3; i++)

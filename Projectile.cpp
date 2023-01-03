@@ -41,8 +41,7 @@ bool Projectile::update(double deltaTime)
                 world->getEntity(enemy_x, enemy_y)->setActionMultipier(2);
             else if (spriteName == "projectile_magic")
             {
-                world->getEntity(enemy_x, enemy_y)->setTimeToNextMove(-3);
-                world->getEntity(enemy_x, enemy_y)->setIsMoving(false);
+                world->getEntity(enemy_x, enemy_y)->stun();
             }
             else if (spriteName == "projectile_fire")
                 world->getEntity(enemy_x, enemy_y)->decreaseHealth(2);
