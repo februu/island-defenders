@@ -29,8 +29,8 @@ To build turrets or mines just right-click selected tile. Building menu will ope
 
 ## 💖 Credits
 
-Coding and majority of graphics was done by me. Special thanks to @DragoonXVIII for drawing enemies and providing mental support throughout the process of creating this game lmao.
+Coding and majority of graphics was done by me. Special thanks to [@DragoonXVIII](https://github.com/DragoonXVIII) for drawing enemies and providing mental support throughout the process of creating this game lmao.
 
 ## 📥 Download
 
-[Download for Windows (.zip with executable inside) - version 1.0 (~1.3MB)](https://febru.me/download/island_defenders_v1.0.zip)
+[Download for Windows (.zip with executable inside) - version 1.0 (~1.3MB)](https://github.com/februu/island-defenders/releases/tag/releases)
