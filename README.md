@@ -2,7 +2,7 @@
 
 ## 👽 About
 
-**Island Defenders** is an isometric tower defense game which is played on randomly generated map. It started as a school project in winter 2022. It took about 4 weeks and at least 15 litres of Lipton Ice Tea to get it finished.
+**Island Defenders** is an isometric tower defense game which is played on randomly generated map. The project is written entirely in SFML - a rendering library. Everything else is tediously hand-crafted. It started as a school project in winter 2022. It took about 4 weeks and at least 15 litres of Lipton Ice Tea to get it finished.
 
 ![screenshot from game](./media/ss.webp)
 
