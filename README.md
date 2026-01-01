@@ -4,7 +4,7 @@
 
 **Island Defenders** is an isometric tower defense game which is played on randomly generated map. It started as a school project in winter 2022. It took about 4 weeks and at least 15 litres of Lipton Ice Tea to get it finished.
 
-![screenshot from game](https://febru.me/my-projects/island-defenders/images/ss.webp)
+![screenshot from game](./media/ss.webp)
 
 ## 📜 Rules
 
